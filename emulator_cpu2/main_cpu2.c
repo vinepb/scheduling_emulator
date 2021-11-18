@@ -1,13 +1,13 @@
-//#############################################################################
-//
-// FILE:   empty_driverlib_main_cpu2.c
-//
-// TITLE:  Empty Project
-//
-// CPU2 Empty Project Example
-//
-// This example is an empty project setup for Driverlib development for CPU2.
-//
+/**
+ * @file main_cpu2.c
+ * @brief CPU 2 main file.
+ * @version 0.1
+ * @date 2021-11-17
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
 //#############################################################################
 //
 // $Release Date: $
@@ -44,20 +44,25 @@
 // $
 //#############################################################################
 
-//
-// Included Files
-//
 #include "driverlib.h"
 #include "device.h"
 
-//
-// Main
-//
 void main(void)
 {
+    /* Initialize device clock and peripherals */
+    Device_init();
 
+    /* Initialize GPIO and configure the GPIO pin as a push-pull output */
+    /* This is configured by CPU1 */
+
+    /* Initialize PIE and clear PIE registers. Disables CPU interrupts. */
+    Interrupt_initModule();
+
+    /* Initialize the PIE vector table with pointers to the shell Interrupt */
+    /* Service Routines (ISR). */
+    Interrupt_initVectorTable();
+
+    /* Enable Global Interrupt (INTM) and realtime interrupt (DBGM) */
+    EINT;
+    ERTM;
 }
-
-//
-// End of File
-//

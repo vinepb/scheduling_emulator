@@ -1,13 +1,13 @@
-//#############################################################################
-//
-// FILE:   empty_driverlib_main_cpu1.c
-//
-// TITLE:  Empty Project
-//
-// CPU1 Empty Project Example
-//
-// This example is an empty project setup for Driverlib development for CPU1.
-//
+/**
+ * @file main_cpu1.c
+ * @brief CPU1 main file
+ * @version 0.1
+ * @date 2021-11-17
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
 //#############################################################################
 //
 // $Release Date: $
@@ -44,20 +44,40 @@
 // $
 //#############################################################################
 
-//
-// Included Files
-//
 #include "driverlib.h"
 #include "device.h"
 
-//
-// Main
-//
 void main(void)
 {
+    /* Initialize device clock and peripherals */
+    Device_init();
 
+#ifdef _STANDALONE
+#ifdef _FLASH
+    /* Send boot command to allow the CPU2 application to begin execution */
+    Device_bootCPU2(C1C2_BROM_BOOTMODE_BOOT_FROM_FLASH);
+#else
+    /* Send boot command to allow the CPU2 application to begin execution */
+    Device_bootCPU2(C1C2_BROM_BOOTMODE_BOOT_FROM_RAM);
+
+#endif // _FLASH
+#endif // _STANDALONE
+
+    /* Initialize GPIO and configure the GPIO pin as a push-pull output */
+    Device_initGPIO();
+
+    /* Clear all interrupts and initialize PIE vector table: */
+    /* Disable CPU interrupts */
+    DINT;
+
+    /* Initialize PIE and clear PIE registers. Disables CPU interrupts */
+    Interrupt_initModule();
+
+    /* Initialize the PIE vector table with pointers to the shell Interrupt */
+    /* Service Routines (ISR). */
+    Interrupt_initVectorTable();
+
+    /* Enable Global Interrupt (INTM) and realtime interrupt (DBGM) */
+    EINT;
+    ERTM;
 }
-
-//
-// End of File
-//
