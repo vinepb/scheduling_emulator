@@ -3,5 +3,13 @@ Real time task scheduling emulator using a dynamic programming.
 
 ## Prerequisites
 
-- Code Composer Studio IDE (https://www.ti.com/tool/CCSTUDIO);
-    - Make sure to select C2000Ware during installation.
+- Download Code Composer Studio IDE (https://www.ti.com/tool/CCSTUDIO)
+    - Make sure to include C2000Ware during installation
+
+## Opening project
+
+- Clone project into workspace
+- Start Code Composer Studio IDE
+- Select `File`>`Open Projects from File System...`
+- Browse for the parent directory `scheduling_emulator`
+- Select both subdirectories `emulator_cpu1` and `emulator_cpu2`
