@@ -57,3 +57,6 @@ Release/
 .xdchelp
 .config/
 .launches/
+
+# Visual Studio Code files
+.vscode/
