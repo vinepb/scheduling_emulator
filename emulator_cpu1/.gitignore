@@ -1,1 +1,7 @@
 /CPU1_RAM/
+# Code Composer Studio files
+Debug/
+Release/
+.xdchelp
+.config/
+.launches/

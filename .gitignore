@@ -51,12 +51,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Code Composer Studio files
-Debug/
-Release/
-.xdchelp
-.config/
-.launches/
-
 # Visual Studio Code files
 .vscode/
