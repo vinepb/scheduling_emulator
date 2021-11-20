@@ -44,8 +44,10 @@
 // $
 //#############################################################################
 
+#include <stdio.h>
 #include "driverlib.h"
 #include "device.h"
+#include "log.h"
 
 void main(void)
 {
@@ -59,7 +61,6 @@ void main(void)
 #else
     /* Send boot command to allow the CPU2 application to begin execution */
     Device_bootCPU2(C1C2_BROM_BOOTMODE_BOOT_FROM_RAM);
-
 #endif // _FLASH
 #endif // _STANDALONE
 

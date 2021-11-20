@@ -44,8 +44,10 @@
 // $
 //#############################################################################
 
+#include <stdio.h>
 #include "driverlib.h"
 #include "device.h"
+#include "log.h"
 
 void main(void)
 {
