@@ -75,13 +75,14 @@ log_level_t log_level_get(void);
  * @param[in] fmt Format string
  * @param[in] ... Format arguments
  */
-void log_write(log_level_t level, const char *tag, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
+void log_write(log_level_t level, const char *tag, const char *fmt, ...)
+    __ATTRIBUTE((__format__(__printf__, 3, 4)));
 
-#define LOG_ERROR(tag, fmt, ...) log_write(LOG_LEVEL_ERROR, tag, fmt, ##__VA_ARGS__)
-#define LOG_WARNING(tag, fmt, ...) log_write(LOG_LEVEL_WARNING, tag, fmt, ##__VA_ARGS__)
-#define LOG_INFO(tag, fmt, ...) log_write(LOG_LEVEL_INFO, tag, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(tag, fmt, ...) log_write(LOG_LEVEL_DEBUG, tag, fmt, ##__VA_ARGS__)
-#define LOG_VERBOSE(tag, fmt, ...) log_write(LOG_LEVEL_VERBOSE, tag, fmt, ##__VA_ARGS__)
+#define LOG_ERROR(tag, fmt, ...)    log_write(LOG_LEVEL_ERROR, tag, fmt"\n", ##__VA_ARGS__)
+#define LOG_WARNING(tag, fmt, ...)  log_write(LOG_LEVEL_WARNING, tag, fmt"\n", ##__VA_ARGS__)
+#define LOG_INFO(tag, fmt, ...)     log_write(LOG_LEVEL_INFO, tag, fmt"\n", ##__VA_ARGS__)
+#define LOG_DEBUG(tag, fmt, ...)    log_write(LOG_LEVEL_DEBUG, tag, fmt"\n", ##__VA_ARGS__)
+#define LOG_VERBOSE(tag, fmt, ...)  log_write(LOG_LEVEL_VERBOSE, tag, fmt"\n", ##__VA_ARGS__)
 
 /**
  * @brief Write a formatted string to the log

@@ -49,12 +49,18 @@
 #include "device.h"
 #include "log.h"
 
+const char* TAG = "main";
+
 void main(void)
 {
+    LOG_INFO(TAG, "Starting core...");
+
+    LOG_VERBOSE(TAG, "Initializing device clock and peripherals...");
     /* Initialize device clock and peripherals */
     Device_init();
 
 #ifdef _STANDALONE
+    LOG_VERBOSE(TAG, "Send boot command to allow the CPU2 application to begin execution...");
 #ifdef _FLASH
     /* Send boot command to allow the CPU2 application to begin execution */
     Device_bootCPU2(C1C2_BROM_BOOTMODE_BOOT_FROM_FLASH);
@@ -64,6 +70,7 @@ void main(void)
 #endif // _FLASH
 #endif // _STANDALONE
 
+    LOG_VERBOSE(TAG, "Initializing GPIO and configure the GPIO pin as a push-pull output...");
     /* Initialize GPIO and configure the GPIO pin as a push-pull output */
     Device_initGPIO();
 
@@ -71,9 +78,11 @@ void main(void)
     /* Disable CPU interrupts */
     DINT;
 
+    LOG_VERBOSE(TAG, "Initializing PIE...");
     /* Initialize PIE and clear PIE registers. Disables CPU interrupts */
     Interrupt_initModule();
 
+    LOG_VERBOSE(TAG, "Registering interrupt handlers...");
     /* Initialize the PIE vector table with pointers to the shell Interrupt */
     /* Service Routines (ISR). */
     Interrupt_initVectorTable();
@@ -81,4 +90,6 @@ void main(void)
     /* Enable Global Interrupt (INTM) and realtime interrupt (DBGM) */
     EINT;
     ERTM;
+
+    LOG_INFO(TAG, "Core started");
 }

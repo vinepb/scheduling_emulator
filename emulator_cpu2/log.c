@@ -60,21 +60,21 @@ log_level_t log_level_get(void)
     return log_level;
 }
 
-void log_write(log_level_t level, const char* tag, const char *format, ...)
+void log_write(log_level_t level, const char* tag, const char *fmt, ...)
 {
     va_list args;
-    va_start(args, format);
-    log_write_va(level, tag, format, args);
+    va_start(args, fmt);
+    log_write_va(level, tag, fmt, args);
     va_end(args);
 }
 
-void log_write_va(log_level_t level, const char *tag, const char *format, va_list args)
+void log_write_va(log_level_t level, const char *tag, const char *fmt, va_list args)
 {
     if (level <= log_level)
     {
         /* TODO: Add timestamp */
         printf("%sCPU2 - %s%s %s: ", COLOR_BLUE, log_level_to_color(level), log_level_to_string(level), tag);
-        vprintf(format, args);
+        vprintf(fmt, args);
         printf("%s", COLOR_RESET);
     }
 }
