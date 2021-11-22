@@ -10,8 +10,9 @@
 
 #include "log.h"
 
-log_level_t log_level = LOG_LEVEL_INFO;
+log_level_t log_level = GLOBAL_LOG_LEVEL;
 
+#if USE_COLOR
 const char *log_level_to_color(log_level_t level)
 {
     switch (level)
@@ -30,6 +31,7 @@ const char *log_level_to_color(log_level_t level)
         return COLOR_CYAN;
     }
 }
+#endif
 
 const char *log_level_to_string(log_level_t level)
 {
@@ -73,8 +75,13 @@ void log_write_va(log_level_t level, const char *tag, const char *fmt, va_list a
     if (level <= log_level)
     {
         /* TODO: Add timestamp */
+        #if USE_COLOR
         printf("%sCPU1 - %s%s %s: ", COLOR_BLUE, log_level_to_color(level), log_level_to_string(level), tag);
         vprintf(fmt, args);
         printf("%s", COLOR_RESET);
+        #endif
+
+        printf("CPU1 - %s %s: ", log_level_to_string(level), tag);
+        vprintf(fmt, args);
     }
 }

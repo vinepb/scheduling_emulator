@@ -14,6 +14,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define USE_COLOR     0
+#define GLOBAL_LOG_LEVEL LOG_LEVEL_VERBOSE
+
+#if USE_COLOR
 #define COLOR_GREY    "\033[1;30m"
 #define COLOR_RED     "\033[0;31m"
 #define COLOR_GREEN   "\033[0;32m"
@@ -22,6 +26,7 @@
 #define COLOR_MAGENTA "\033[1;35m"
 #define COLOR_CYAN    "\033[0;36m"
 #define COLOR_RESET   "\033[0m"
+#endif
 
 /**
  * @brief Log levels
