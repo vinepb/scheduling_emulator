@@ -17,7 +17,7 @@
 #define USE_COLOR     0
 #define GLOBAL_LOG_LEVEL LOG_LEVEL_VERBOSE
 
-#if USE_COLOR == 1
+#if USE_COLOR
 #define COLOR_GREY    "\033[1;30m"
 #define COLOR_RED     "\033[0;31m"
 #define COLOR_GREEN   "\033[0;32m"
