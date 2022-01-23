@@ -1,8 +1,0 @@
-# Code Composer Studio files
-Debug/
-Release/
-.xdchelp
-.config/
-.launches/
-/CPU2_FLASH/
-/CPU2_RAM/
