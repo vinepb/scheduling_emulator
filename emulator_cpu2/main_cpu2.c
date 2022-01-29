@@ -51,7 +51,13 @@
 #include "device.h"
 #include "ipc.h"
 
+#include "knapsack.h"
+
 #define IPC_CMD_READ_DATA   0x1001
+
+uint32_t number_of_items = 3;
+uint32_t values[3] = {100,50,150};
+uint32_t weights[3] = {20,10,30};
 
 /**
  * @brief IPC 0 Interrupt Service Routine. 
@@ -99,6 +105,8 @@ __interrupt void ipc0_ISR(void)
     IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false, &cmd, &addr, &data);
 
     printf("CPU2: Received command: %ld data: %ld\n", cmd, data);
+
+    data = dynamic_knapsack(data, number_of_items, values, weights);
 
     printf("CPU2: Sending data: %ld\n", data);
 

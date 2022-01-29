@@ -9,6 +9,8 @@
  * 
  */
 
+#include <stdlib.h>
+
 #include "rand_generator.h"
 
 uint32_t rand_generator()

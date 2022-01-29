@@ -13,7 +13,6 @@
 #define RAND_GENERATOR_H_
 
 #include <stdint.h>
-#include <stdlib.h>
 
 /**
  * @brief Generate a random number.
