@@ -5,6 +5,7 @@ Real time task scheduling emulator utilizing dynamic programming.
 
 - Download Code Composer Studio IDE (https://www.ti.com/tool/CCSTUDIO)
     - Make sure to include C2000Ware during installation
+- Target C2000 device: LAUNCHXL F28379D Delfino
 
 ## Opening project
 
