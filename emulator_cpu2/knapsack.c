@@ -12,27 +12,36 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "tasks.h"
 #include "knapsack.h"
 
-#define max(a, b) \
-    ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-       _a > _b ? _a : _b; })
-
-uint32_t dynamic_knapsack(uint32_t max_weight, uint32_t number_of_items, uint32_t *vector_value, uint32_t *vector_weight)
+uint32_t max(uint32_t a, uint32_t b)
 {
-    uint32_t **aux_matrix, i, j;
-    // The aux_matrix is a matrix that will be used to store the results of the
-    // dynamic programming.
-    // The first row and column of the matrix are not used.
-    aux_matrix = (uint32_t **) malloc(number_of_items * sizeof(uint32_t *));
-    for (i = 0; i < (number_of_items + 1); i++)
+    if (a > b)
     {
-        aux_matrix[i] = (uint32_t *) malloc((max_weight + 1) * sizeof(uint32_t));
+        return a;
+    }
+    else
+    {
+        return b;
+    }
+}
+
+uint32_t dynamic_knapsack(uint32_t max_weight)
+{
+    uint32_t aux_matrix[NUMBER_OF_ITEMS + 1][SUM_OF_WEIGHTS + 1];
+    uint32_t best = 0;
+    uint32_t items = 0, k = 0;
+    int i, j;
+
+    // Cap max_weight to avoid overflow
+    if (max_weight > SUM_OF_WEIGHTS)
+    {
+        max_weight = SUM_OF_WEIGHTS;
     }
 
     // Initialize all values of the matrix to 0.
-    for (i = 0; i < (number_of_items + 1); i ++)
+    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i ++)
     {
         for (j = 0; j < (max_weight + 1); j++)
         {
@@ -41,7 +50,7 @@ uint32_t dynamic_knapsack(uint32_t max_weight, uint32_t number_of_items, uint32_
     }
 
     // Fill the matrix with the values of the knapsack problem.
-    for (i = 0; i < (number_of_items + 1); i++)
+    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i++)
     {
         for (j = 0; j < (max_weight + 1); j++)
         {
@@ -49,9 +58,9 @@ uint32_t dynamic_knapsack(uint32_t max_weight, uint32_t number_of_items, uint32_
             {
                 aux_matrix[i][j] = 0;
             }
-            else if (vector_weight[i - 1] <= j)
+            else if (weights[i - 1] <= j)
             {
-                aux_matrix[i][j] = max(vector_value[i - 1] + aux_matrix[i - 1][j - vector_weight[i - 1]], aux_matrix[i - 1][j]);
+                aux_matrix[i][j] = max(values[i - 1] + aux_matrix[i - 1][j - weights[i - 1]], aux_matrix[i - 1][j]);
             }
             else{
                 aux_matrix[i][j] = aux_matrix[i - 1][j];
@@ -59,7 +68,28 @@ uint32_t dynamic_knapsack(uint32_t max_weight, uint32_t number_of_items, uint32_
         }
     }
 
-    uint32_t best = aux_matrix[number_of_items][max_weight];
+    best = aux_matrix[NUMBER_OF_ITEMS][max_weight];
+    k = max_weight;
+    items = 0;
 
-    return best;
+    // Find the items that will be in the knapsack.
+    for (i = NUMBER_OF_ITEMS; i > 0; i--)
+    {
+        if (aux_matrix[i - 1][k] != best)
+        {
+            items |= (1 << (i - 1));
+            k = (k - weights[i - 1]);
+            best = aux_matrix[i][k];
+        }
+    }
+
+    // Free the memory used by the matrix.
+    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i++)
+    {
+        free(aux_matrix[i]);
+    }
+    free(aux_matrix);
+
+    return items;
+    // return best;
 }

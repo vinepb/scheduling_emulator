@@ -51,13 +51,10 @@
 #include "device.h"
 #include "ipc.h"
 
+#include "tasks.h"
 #include "knapsack.h"
 
 #define IPC_CMD_READ_DATA   0x1001
-
-uint32_t number_of_items = 3;
-uint32_t values[3] = {100,50,150};
-uint32_t weights[3] = {20,10,30};
 
 /**
  * @brief IPC 0 Interrupt Service Routine. 
@@ -100,18 +97,29 @@ void main(void)
 __interrupt void ipc0_ISR(void)
 {
     uint32_t cmd, addr, data;
+    int i;
 
     // Read the data from the IPC registers.
-    IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false, &cmd, &addr, &data);
+    IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false,
+    &cmd, &addr, &data);
 
-    printf("CPU2: Received command: %ld data: %ld\n", cmd, data);
+    printf("CPU2: Received data: %ld command: %ld\n", data, cmd);
 
-    data = dynamic_knapsack(data, number_of_items, values, weights);
+    if (cmd == IPC_CMD_READ_DATA)
+    {
+        data = dynamic_knapsack(data);
+        
+        printf("CPU2: Sending data: %ld", data);
+        printf(" 0b");
+        for (i = NUMBER_OF_ITEMS - 1; i >= 0; i--)
+        {
+            printf("%ld", ((data >> i) & 1));
+        }
+        printf("\n");
 
-    printf("CPU2: Sending data: %ld\n", data);
-
-    // Send response.
-    IPC_sendResponse(IPC_CPU2_L_CPU1_R, data);
+        // Send response.
+        IPC_sendResponse(IPC_CPU2_L_CPU1_R, data);
+    }
 
     // Acknowledge IPC0 flag from remote.
     IPC_ackFlagRtoL(IPC_CPU2_L_CPU1_R, IPC_FLAG0);

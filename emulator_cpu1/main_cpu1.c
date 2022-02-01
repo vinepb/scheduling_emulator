@@ -54,14 +54,15 @@
 #include "rand_generator.h"
 
 #define IPC_CMD_READ_DATA   0x1001
+#define NUMBER_OF_ITEMS 3
 
 /**
  * @brief CPU1 main function.
  */
 void main(void)
 {
-    uint32_t rand;
     uint32_t data;
+    int i;
 
     // Configure system clock and PLL, enable peripherals, and configure
     // flash if used.
@@ -94,13 +95,13 @@ void main(void)
 
     while(1)
     {
-        rand = rand_generator();
+        data = rand_generator();
 
-        printf("CPU1: Sending data: %ld\n", rand);
+        printf("CPU1: Sending data: %ld\n", data);
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        IPC_CMD_READ_DATA, 0, rand);
+        IPC_CMD_READ_DATA, 0, data);
 
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
@@ -108,7 +109,12 @@ void main(void)
         // Read response
         data = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
-        printf("CPU1: Received data: %ld\n", data);
-
+        printf("CPU1: Received data: %ld", data);
+        printf(" 0b");
+        for (i = NUMBER_OF_ITEMS - 1; i >= 0; i--)
+        {
+            printf("%ld", ((data >> i) & 1));
+        }
+        printf("\n");
     }
 }

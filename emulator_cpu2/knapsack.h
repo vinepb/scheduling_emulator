@@ -17,12 +17,9 @@
 /**
  * @brief Dynamic programming solution for the knapsack problem.
  * 
- * @param[in] max_weight Maximum weight of the knapsack. 
- * @param[in] number_of_items Number of items.
- * @param[in] vector_value Vector with the value of each item.
- * @param[in] vector_weight Vector with the weight of each item.
+ * @param[in] max_weight Maximum weight of the knapsack.
  * @return @c uint32_t Items that can be put in the knapsack.
  */
-uint32_t dynamic_knapsack(uint32_t max_weight, uint32_t number_of_items, uint32_t *vector_value, uint32_t *vector_weight);
+uint32_t dynamic_knapsack(uint32_t max_weight);
 
 #endif /* KNAPSACK_H_ */
