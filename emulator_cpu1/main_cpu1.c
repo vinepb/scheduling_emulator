@@ -53,8 +53,19 @@
 
 #include "rand_generator.h"
 
-#define IPC_CMD_READ_DATA   0x1001
 #define NUMBER_OF_ITEMS 3
+#define IPC_CMD_READ_DATA   0x1001
+#define ADC_RESOLUTION      12
+
+/**
+ * @brief Initialize ADC A.
+ */
+void init_ADC_A(void);
+
+/**
+ * @brief Initialize ADC A start-of-conversion (SOC).
+ */
+void init_ADC_A_SOC(void);
 
 /**
  * @brief CPU1 main function.
@@ -62,6 +73,7 @@
 void main(void)
 {
     uint32_t data;
+    uint16_t ADCA_Result;
     int i;
 
     // Configure system clock and PLL, enable peripherals, and configure
@@ -88,6 +100,9 @@ void main(void)
     // Synchronize both the cores.
     IPC_sync(IPC_CPU1_L_CPU2_R, IPC_FLAG17);
 
+    init_ADC_A();
+    init_ADC_A_SOC();
+
     // Enable global interrupts.
     EINT;
     // Enable real-time debug.
@@ -96,6 +111,16 @@ void main(void)
     while(1)
     {
         data = rand_generator();
+
+        // Convert, wait for completion, and store results
+        ADC_forceMultipleSOC(ADCA_BASE, ADC_FORCE_SOC0);
+
+        // Wait for ADCA to complete, then acknowledge flag
+        while(ADC_getInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1) == false);
+        ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
+        
+        // Store results
+        ADCA_Result = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0);
 
         printf("CPU1: Sending data: %ld\n", data);
 
@@ -117,4 +142,44 @@ void main(void)
         }
         printf("\n");
     }
+}
+
+void init_ADC_A(void)
+{
+    // Set ADCDLK divider to /4
+    ADC_setPrescaler(ADCA_BASE, ADC_CLK_DIV_4_0);
+
+    // Set resolution and signal mode (see #defines above) and load
+    // corresponding trims.
+#if(ADC_RESOLUTION == 12)
+    ADC_setMode(ADCA_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
+#elif(ADC_RESOLUTION == 16)
+    ADC_setMode(ADCA_BASE, ADC_RESOLUTION_16BIT, ADC_MODE_DIFFERENTIAL);
+#endif
+
+    // Set pulse positions to late
+    ADC_setInterruptPulseMode(ADCA_BASE, ADC_PULSE_END_OF_CONV);
+
+    // Power up the ADC and delay for 1 ms
+    ADC_enableConverter(ADCA_BASE);
+
+    DEVICE_DELAY_US(1000);
+}
+
+void init_ADC_A_SOC(void)
+{   
+    // Configure SOC0 to convert pin A0 by software only
+#if(ADC_RESOLUTION == 12)
+    ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
+                 ADC_CH_ADCIN0, 15);
+#elif(ADC_RESOLUTION == 16)
+    ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
+                 ADC_CH_ADCIN0, 64);
+#endif
+
+    // Set SOC0 to set interrupt 1 flag. Enable the interrupt and make
+    // sure irs flag is cleared.
+    ADC_setInterruptSource(ADCA_BASE, ADC_INT_NUMBER1, ADC_SOC_NUMBER0);
+    ADC_enableInterrupt(ADCA_BASE, ADC_INT_NUMBER1);
+    ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
 }
