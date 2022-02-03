@@ -15,7 +15,14 @@
 #include "tasks.h"
 #include "knapsack.h"
 
-uint32_t max(uint32_t a, uint32_t b)
+/**
+ * @brief Calculates the maximum between two numbers.
+ * 
+ * @param[in] a First number.
+ * @param[in] b Second number.
+ * @return @c uint32_t The greater number.
+ */
+static uint32_t max(uint32_t a, uint32_t b)
 {
     if (a > b)
     {

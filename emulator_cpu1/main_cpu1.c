@@ -53,9 +53,7 @@
 
 #include "rand_generator.h"
 
-#define NUMBER_OF_ITEMS 3
-#define IPC_CMD_READ_DATA   0x1001
-#define ADC_RESOLUTION      12
+uint32_t GPIO_pins[] = {104U, 105U, 22U};
 
 /**
  * @brief Initialize ADC A.
@@ -90,6 +88,14 @@ void main(void)
 #endif
 #endif
 
+    // Initialize GPIO and configure the GPIO pin as a push-pull output
+    Device_initGPIO();
+    for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
+    {
+        GPIO_setPadConfig(GPIO_pins[i], GPIO_PIN_TYPE_STD);
+        GPIO_setDirectionMode(GPIO_pins[i], GPIO_DIR_MODE_OUT);
+    }
+
     // Initialize the PIE module and vector table.
     Interrupt_initModule();
     Interrupt_initVectorTable();
@@ -122,11 +128,13 @@ void main(void)
         // Store results
         ADCA_Result = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0);
 
+        data = (((uint32_t)ADCA_Result) * 100) / 4095;
+
         printf("CPU1: Sending data: %ld\n", data);
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        IPC_CMD_READ_DATA, 0, data);
+        0, 0, data);
 
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
@@ -134,13 +142,19 @@ void main(void)
         // Read response
         data = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
-        printf("CPU1: Received data: %ld", data);
-        printf(" 0b");
-        for (i = NUMBER_OF_ITEMS - 1; i >= 0; i--)
+        for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
         {
-            printf("%ld", ((data >> i) & 1));
+            if ((data >> i) & 1UL)
+            {
+                GPIO_writePin(GPIO_pins[i], 1);
+            }
+            else
+            {
+                GPIO_writePin(GPIO_pins[i], 0);
+            }
         }
-        printf("\n");
+
+        printf("CPU1: Received data: %ld\n", data);
     }
 }
 
@@ -149,13 +163,9 @@ void init_ADC_A(void)
     // Set ADCDLK divider to /4
     ADC_setPrescaler(ADCA_BASE, ADC_CLK_DIV_4_0);
 
-    // Set resolution and signal mode (see #defines above) and load
+    // Set resolution and signal mode and load
     // corresponding trims.
-#if(ADC_RESOLUTION == 12)
     ADC_setMode(ADCA_BASE, ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
-#elif(ADC_RESOLUTION == 16)
-    ADC_setMode(ADCA_BASE, ADC_RESOLUTION_16BIT, ADC_MODE_DIFFERENTIAL);
-#endif
 
     // Set pulse positions to late
     ADC_setInterruptPulseMode(ADCA_BASE, ADC_PULSE_END_OF_CONV);
@@ -169,13 +179,8 @@ void init_ADC_A(void)
 void init_ADC_A_SOC(void)
 {   
     // Configure SOC0 to convert pin A0 by software only
-#if(ADC_RESOLUTION == 12)
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
                  ADC_CH_ADCIN0, 15);
-#elif(ADC_RESOLUTION == 16)
-    ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
-                 ADC_CH_ADCIN0, 64);
-#endif
 
     // Set SOC0 to set interrupt 1 flag. Enable the interrupt and make
     // sure irs flag is cleared.
