@@ -53,7 +53,26 @@
 
 #include "rand_generator.h"
 
+#define USE_ADC 0
+#define TIMER0_PERIOD_MS 100
+
+/**
+ * @brief LEDs pins.
+ */
 uint32_t GPIO_pins[] = {104U, 105U, 22U};
+
+/**
+ * @brief Timer 0 Interrupt Service Routine.
+ */
+__interrupt void cpuTimer0ISR(void);
+
+/**
+ * @brief Initialize timer 0
+ * 
+ * @param[in] freq System clock frequency
+ * @param[in] period Timer period
+ */
+void initCPUTimer0(float freq, float period);
 
 /**
  * @brief Initialize ADC A.
@@ -70,8 +89,6 @@ void init_ADC_A_SOC(void);
  */
 void main(void)
 {
-    uint32_t data;
-    uint16_t ADCA_Result;
     int i;
 
     // Configure system clock and PLL, enable peripherals, and configure
@@ -109,6 +126,8 @@ void main(void)
     init_ADC_A();
     init_ADC_A_SOC();
 
+    initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
+
     // Enable global interrupts.
     EINT;
     // Enable real-time debug.
@@ -116,46 +135,90 @@ void main(void)
 
     while(1)
     {
-        data = rand_generator();
-
-        // Convert, wait for completion, and store results
-        ADC_forceMultipleSOC(ADCA_BASE, ADC_FORCE_SOC0);
-
-        // Wait for ADCA to complete, then acknowledge flag
-        while(ADC_getInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1) == false);
-        ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
-        
-        // Store results
-        ADCA_Result = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0);
-
-        data = (((uint32_t)ADCA_Result) * 100) / 4095;
-
-        printf("CPU1: Sending data: %ld\n", data);
-
-        // Send a message without message queue
-        IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        0, 0, data);
-
-        // Wait for acknowledgment
-        IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
-
-        // Read response
-        data = IPC_getResponse(IPC_CPU1_L_CPU2_R);
-
-        for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
-        {
-            if ((data >> i) & 1UL)
-            {
-                GPIO_writePin(GPIO_pins[i], 1);
-            }
-            else
-            {
-                GPIO_writePin(GPIO_pins[i], 0);
-            }
-        }
-
-        printf("CPU1: Received data: %ld\n", data);
     }
+}
+
+__interrupt void cpuTimer0ISR(void)
+{
+    uint32_t data;
+    int i;
+
+#if USE_ADC
+    uint16_t ADCA_Result;
+    // Convert, wait for completion, and store results
+    ADC_forceMultipleSOC(ADCA_BASE, ADC_FORCE_SOC0);
+
+    // Wait for ADCA to complete, then acknowledge flag
+    while(ADC_getInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1) == false);
+    ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
+    
+    // Store results
+    ADCA_Result = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0);
+
+    data = (((uint32_t)ADCA_Result) * 100) / 4095;
+#else /* Use random number generator instead */
+    data = rand_generator();
+#endif /* USE_ADC */
+
+    printf("CPU1: Sending data: %ld\n", data);
+
+    // Send a message without message queue
+    IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
+    0, 0, data);
+
+    // Wait for acknowledgment
+    IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
+
+    // Read response
+    data = IPC_getResponse(IPC_CPU1_L_CPU2_R);
+
+    for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
+    {
+        if ((data >> i) & 1UL)
+        {
+            GPIO_writePin(GPIO_pins[i], 1);
+        }
+        else
+        {
+            GPIO_writePin(GPIO_pins[i], 0);
+        }
+    }
+    printf("CPU1: Received data: %ld\n", data);
+
+    // Clear CPU interrupt flag
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+void initCPUTimer0(float freq, float period)
+{
+    uint32_t temp;
+    // Initialize timer period
+    temp = (uint32_t)(freq / 1000000 * period);
+    CPUTimer_setPeriod(CPUTIMER0_BASE, temp);
+
+    // Initialize pre-scale counter to divide by 1 (SYSCLKOUT)
+    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);
+
+    // Make sure timer is stopped
+    CPUTimer_stopTimer(CPUTIMER0_BASE);
+
+    // Reload counter register with period value
+    CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
+
+    // Register interrupt handler
+    Interrupt_register(INT_TIMER0, &cpuTimer0ISR);
+
+    // Disable free run
+    CPUTimer_setEmulationMode(CPUTIMER0_BASE, CPUTIMER_EMULATIONMODE_STOPAFTERNEXTDECREMENT);
+
+    // Enable timer interrupt
+    CPUTimer_enableInterrupt(CPUTIMER0_BASE);
+
+    // Enable CPU int1, which is connected to CPU-Timer 0
+    Interrupt_enable(INT_TIMER0);
+
+    // Start timer
+    CPUTimer_startTimer(CPUTIMER0_BASE);
 }
 
 void init_ADC_A(void)
