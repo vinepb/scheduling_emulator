@@ -101,20 +101,20 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
     {
         if (items & (1UL << i))
         {
-            task_on_off_status[i] = 1;
+            task_on_off_status[i] = true;
         }
         else
         {
-            task_on_off_status[i] = 0;
+            task_on_off_status[i] = false;
         }
         // Did the task finish?
         if (task_computing_time[i] - task_executed_time[i] <= 0)
         {
             // Variable initialization.
-            task_on_off_status[i] = 0;
+            task_on_off_status[i] = false;
             task_executed_time[i] = 0;
             values[i] = 0;
-            task_already_executed[i] = 1;
+            task_already_executed[i] = true;
         }
         // New deadline calculation.
         if (tick >= task_deadline[i])
@@ -123,7 +123,7 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
             task_already_executed[i] = 0;
         }
         // Is task running?
-        if (task_on_off_status[i] == 1)
+        if (task_on_off_status[i] == true)
         {
             task_executed_time[i] += tick - last_tick;
         }
@@ -138,7 +138,7 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
             values[i] = (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i]));
         }
         // If the task has already been executed.
-        if (task_already_executed[i] == 1)
+        if (task_already_executed[i] == true)
         {
             values[i] = 1;
         }
