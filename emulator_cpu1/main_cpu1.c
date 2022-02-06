@@ -77,12 +77,12 @@ void initCPUTimer0(float freq, float period);
 /**
  * @brief Initialize ADC A.
  */
-void init_ADC_A(void);
+void initADCA(void);
 
 /**
  * @brief Initialize ADC A start-of-conversion (SOC).
  */
-void init_ADC_A_SOC(void);
+void initADCASOC(void);
 
 /**
  * @brief CPU1 main function.
@@ -105,7 +105,7 @@ void main(void)
 #endif
 #endif
 
-    // Initialize GPIO and configure the GPIO pin as a push-pull output
+    // Initialize GPIO and configure the GPIO pin as a push-pull output.
     Device_initGPIO();
     for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
     {
@@ -123,8 +123,8 @@ void main(void)
     // Synchronize both the cores.
     IPC_sync(IPC_CPU1_L_CPU2_R, IPC_FLAG17);
 
-    init_ADC_A();
-    init_ADC_A_SOC();
+    initADCA();
+    initADCASOC();
 
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
 
@@ -221,7 +221,7 @@ void initCPUTimer0(float freq, float period)
     CPUTimer_startTimer(CPUTIMER0_BASE);
 }
 
-void init_ADC_A(void)
+void initADCA(void)
 {
     // Set ADCDLK divider to /4
     ADC_setPrescaler(ADCA_BASE, ADC_CLK_DIV_4_0);
@@ -239,7 +239,7 @@ void init_ADC_A(void)
     DEVICE_DELAY_US(1000);
 }
 
-void init_ADC_A_SOC(void)
+void initADCASOC(void)
 {   
     // Configure SOC0 to convert pin A0 by software only
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
