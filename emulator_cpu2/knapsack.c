@@ -24,19 +24,13 @@
  */
 static uint32_t max(uint32_t a, uint32_t b)
 {
-    if (a > b)
-    {
-        return a;
-    }
-    else
-    {
-        return b;
-    }
+    if (a > b) { return a;}
+    else { return b;}
 }
 
 uint32_t dynamic_knapsack(uint32_t max_weight)
 {
-    uint32_t aux_matrix[NUMBER_OF_ITEMS + 1][SUM_OF_WEIGHTS + 1];
+    uint32_t aux_matrix[TASK_COUNT + 1][SUM_OF_WEIGHTS + 1];
     uint32_t best = 0;
     uint32_t items = 0, k = 0;
     int i, j;
@@ -48,7 +42,7 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     }
 
     // Initialize all values of the matrix to 0.
-    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i ++)
+    for (i = 0; i < (TASK_COUNT + 1); i ++)
     {
         for (j = 0; j < (max_weight + 1); j++)
         {
@@ -57,7 +51,7 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     }
 
     // Fill the matrix with the values of the knapsack problem.
-    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i++)
+    for (i = 0; i < (TASK_COUNT + 1); i++)
     {
         for (j = 0; j < (max_weight + 1); j++)
         {
@@ -75,12 +69,12 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
         }
     }
 
-    best = aux_matrix[NUMBER_OF_ITEMS][max_weight];
+    best = aux_matrix[TASK_COUNT][max_weight];
     k = max_weight;
     items = 0;
 
     // Find the items that will be in the knapsack.
-    for (i = NUMBER_OF_ITEMS; i > 0; i--)
+    for (i = TASK_COUNT; i > 0; i--)
     {
         if (aux_matrix[i - 1][k] != best)
         {
@@ -90,13 +84,63 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
         }
     }
 
-    // Free the memory used by the matrix.
-    for (i = 0; i < (NUMBER_OF_ITEMS + 1); i++)
-    {
-        free(aux_matrix[i]);
-    }
-    free(aux_matrix);
-
     return items;
     // return best;
+}
+
+void dynamic_priority(uint32_t new_tick, uint32_t items)
+{
+    static uint32_t last_tick = 0;
+    static uint32_t tick = 0;
+    int i;
+
+    last_tick = tick;
+    tick = new_tick;
+
+    for (i = 0; i < TASK_COUNT; i++)
+    {
+        if (items & (1UL << i))
+        {
+            task_on_off_status[i] = 1;
+        }
+        else
+        {
+            task_on_off_status[i] = 0;
+        }
+        // Did the task finish?
+        if (task_computing_time[i] - task_executed_time[i] <= 0)
+        {
+            // Variable initialization.
+            task_on_off_status[i] = 0;
+            task_executed_time[i] = 0;
+            values[i] = 0;
+            task_already_executed[i] = 1;
+        }
+        // New deadline calculation.
+        if (tick >= task_deadline[i])
+        {
+            task_deadline[i] += task_period[i];
+            task_already_executed[i] = 0;
+        }
+        // Is task running?
+        if (task_on_off_status[i] == 1)
+        {
+            task_executed_time[i] += tick - last_tick;
+        }
+        // Next deadline loss.
+        if ((task_deadline[i] - task_computing_time[i] - tick) <= 0)
+        {
+            values[i] = UINT32_MAX;
+        }
+        else
+        {
+            // Priority calculation.
+            values[i] = (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i]));
+        }
+        // If the task has already been executed.
+        if (task_already_executed[i] == 1)
+        {
+            values[i] = 1;
+        }
+    }
 }

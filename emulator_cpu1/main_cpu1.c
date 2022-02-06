@@ -53,7 +53,7 @@
 
 #include "rand_generator.h"
 
-#define USE_ADC 0
+#define USE_ADC 1
 #define TIMER0_PERIOD_MS 100
 
 /**

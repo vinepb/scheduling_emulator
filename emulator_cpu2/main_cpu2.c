@@ -53,10 +53,25 @@
 
 #include "knapsack.h"
 
+static uint32_t SysTick = 0;
+
 /**
  * @brief IPC 0 Interrupt Service Routine. 
  */
 __interrupt void ipc0_ISR(void);
+
+/**
+ * @brief Timer 0 Interrupt Service Routine.
+ */
+__interrupt void cpuTimer0ISR(void);
+
+/**
+ * @brief Initialize timer 0
+ * 
+ * @param[in] freq System clock frequency
+ * @param[in] period Timer period
+ */
+void initCPUTimer0(float freq, float period);
 
 /**
  * @brief CPU2 main function.
@@ -77,6 +92,8 @@ void main(void)
     // Enable IPC0 interrupt.
     IPC_registerInterrupt(IPC_CPU2_L_CPU1_R, IPC_INT0, ipc0_ISR);
 
+    initCPUTimer0(DEVICE_SYSCLK_FREQ, 1000UL);
+
     // Enable global interrupts.
     EINT;
     // Enable real-time debug.
@@ -87,12 +104,12 @@ void main(void)
 
     while(1)
     {
-
     }
 }
 
 __interrupt void ipc0_ISR(void)
 {
+    static uint32_t items = 0;
     uint32_t cmd, addr, data;
 
     // Read the data from the IPC registers.
@@ -101,17 +118,57 @@ __interrupt void ipc0_ISR(void)
 
     printf("CPU2: Received data: %ld\n", data);
 
-    data = dynamic_knapsack(data);
+    dynamic_priority(SysTick, items);
 
-    printf("CPU2: Sending data: %ld\n", data);
+    items = dynamic_knapsack(data);
+
+    printf("CPU2: Sending data: %ld\n", items);
 
     // Send response.
-    IPC_sendResponse(IPC_CPU2_L_CPU1_R, data);
+    IPC_sendResponse(IPC_CPU2_L_CPU1_R, items);
 
     // Acknowledge IPC0 flag from remote.
     IPC_ackFlagRtoL(IPC_CPU2_L_CPU1_R, IPC_FLAG0);
 
     // Clear interrupt flags.
     Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
-    
+}
+
+__interrupt void cpuTimer0ISR(void)
+{
+    SysTick++;
+    // Clear CPU interrupt flag
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+void initCPUTimer0(float freq, float period)
+{
+    uint32_t temp;
+    // Initialize timer period
+    temp = (uint32_t)(freq / 1000000 * period);
+    CPUTimer_setPeriod(CPUTIMER0_BASE, temp);
+
+    // Initialize pre-scale counter to divide by 1 (SYSCLKOUT)
+    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);
+
+    // Make sure timer is stopped
+    CPUTimer_stopTimer(CPUTIMER0_BASE);
+
+    // Reload counter register with period value
+    CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
+
+    // Register interrupt handler
+    Interrupt_register(INT_TIMER0, &cpuTimer0ISR);
+
+    // Disable free run
+    CPUTimer_setEmulationMode(CPUTIMER0_BASE, CPUTIMER_EMULATIONMODE_STOPAFTERNEXTDECREMENT);
+
+    // Enable timer interrupt
+    CPUTimer_enableInterrupt(CPUTIMER0_BASE);
+
+    // Enable CPU int1, which is connected to CPU-Timer 0
+    Interrupt_enable(INT_TIMER0);
+
+    // Start timer
+    CPUTimer_startTimer(CPUTIMER0_BASE);
 }
