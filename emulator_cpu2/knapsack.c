@@ -135,7 +135,7 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
         else
         {
             // Priority calculation.
-            values[i] = (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i]));
+            values[i] = max(1, (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i])));
         }
         // If the task has already been executed.
         if (task_already_executed[i] == true)
