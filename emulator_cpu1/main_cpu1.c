@@ -53,14 +53,26 @@
 
 #include "rand_generator.h"
 
+// User config defines *********************
+#define USE_TIMER 0
 #define USE_ADC 1
-#define TIMER0_PERIOD_MS 100
 
-/**
- * @brief LEDs pins.
- */
+#define TIMER0_PERIOD_MS 100
+#define SCIB_BAURATE 9600
+//******************************************
+// Don't change this section************ ***
+#if !USE_TIMER
+#ifdef USE_ADC
+#undef USE_ADC
+#define USE_ADC USE_TIMER
+#endif
+#endif
+//******************************************
+
+// LEDs pins.
 uint32_t GPIO_pins[] = {104U, 105U, 22U};
 
+#if USE_TIMER
 /**
  * @brief Timer 0 Interrupt Service Routine.
  */
@@ -74,6 +86,7 @@ __interrupt void cpuTimer0ISR(void);
  */
 void initCPUTimer0(float freq, float period);
 
+#if USE_ADC
 /**
  * @brief Initialize ADC A.
  */
@@ -83,14 +96,22 @@ void initADCA(void);
  * @brief Initialize ADC A start-of-conversion (SOC).
  */
 void initADCASOC(void);
+#endif
+
+#else
+
+/**
+ * @brief Initialize Serial Communication Interface B.
+ */
+void initSCIB(void);
+
+#endif
 
 /**
  * @brief CPU1 main function.
  */
 void main(void)
 {
-    int i;
-
     // Configure system clock and PLL, enable peripherals, and configure
     // flash if used.
     Device_init();
@@ -107,11 +128,29 @@ void main(void)
 
     // Initialize GPIO and configure the GPIO pin as a push-pull output.
     Device_initGPIO();
+
+#if USE_TIMER
+    int i;
     for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
     {
         GPIO_setPadConfig(GPIO_pins[i], GPIO_PIN_TYPE_STD);
         GPIO_setDirectionMode(GPIO_pins[i], GPIO_DIR_MODE_OUT);
     }
+#else
+    // GPIO28 is the SCI Rx pin.
+    GPIO_setMasterCore(19, GPIO_CORE_CPU1);
+    GPIO_setPinConfig(GPIO_19_SCIRXDB);
+    GPIO_setDirectionMode(19, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(19, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(19, GPIO_QUAL_ASYNC);
+
+    // GPIO29 is the SCI Tx pin.
+    GPIO_setMasterCore(18, GPIO_CORE_CPU1);
+    GPIO_setPinConfig(GPIO_18_SCITXDB);
+    GPIO_setDirectionMode(18, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(18, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(18, GPIO_QUAL_ASYNC);
+#endif
 
     // Initialize the PIE module and vector table.
     Interrupt_initModule();
@@ -123,10 +162,17 @@ void main(void)
     // Synchronize both the cores.
     IPC_sync(IPC_CPU1_L_CPU2_R, IPC_FLAG17);
 
+#if USE_TIMER
+#if USE_ADC
     initADCA();
     initADCASOC();
-
+#endif
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
+#else
+    initSCIB();
+    char receivedChar;
+    uint16_t rxStatus = 0U;
+#endif
 
     // Enable global interrupts.
     EINT;
@@ -135,9 +181,26 @@ void main(void)
 
     while(1)
     {
+#if !USE_TIMER
+        // Read a character from FIFO.
+        // receivedChar = SCI_readCharBlockingFIFO(SCIB_BASE);
+        // rxStatus = SCI_getRxStatus(SCIB_BASE);
+        // if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        // {
+        //     //
+        //     //If Execution stops here there is some error
+        //     //Analyze SCI_getRxStatus() API return value
+        //     //
+        //     ESTOP0;
+        // }
+        // Echo back the received character.
+        receivedChar = '3';
+        SCI_writeCharBlockingNonFIFO(SCIB_BASE, receivedChar);
+#endif
     }
 }
 
+#if USE_TIMER
 __interrupt void cpuTimer0ISR(void)
 {
     uint32_t data;
@@ -221,6 +284,7 @@ void initCPUTimer0(float freq, float period)
     CPUTimer_startTimer(CPUTIMER0_BASE);
 }
 
+#if USE_ADC
 void initADCA(void)
 {
     // Set ADCDLK divider to /4
@@ -251,3 +315,31 @@ void initADCASOC(void)
     ADC_enableInterrupt(ADCA_BASE, ADC_INT_NUMBER1);
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
 }
+#endif
+
+#else
+
+void initSCIB()
+{
+    SCI_performSoftwareReset(SCIB_BASE);
+
+    // 8 char bits, 1 stop bit, no parity.
+    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, SCIB_BAURATE, (SCI_CONFIG_WLEN_8 |
+                                                                SCI_CONFIG_STOP_ONE |
+                                                                SCI_CONFIG_PAR_NONE));
+    SCI_resetChannels(SCIB_BASE);
+    SCI_resetRxFIFO(SCIB_BASE);
+    SCI_resetTxFIFO(SCIB_BASE);
+    SCI_clearInterruptStatus(SCIB_BASE, SCI_INT_TXFF | SCI_INT_RXFF);
+    SCI_enableFIFO(SCIB_BASE);
+    SCI_enableModule(SCIB_BASE);
+    SCI_performSoftwareReset(SCIB_BASE);
+
+#ifdef AUTOBAUD
+    // Perform an autobaud lock.
+    // SCI expects an 'a' or 'A' to lock the baud rate.
+    SCI_lockAutobaud(SCIB_BASE);
+#endif
+}
+
+#endif
