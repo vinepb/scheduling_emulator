@@ -1,4 +1,5 @@
 # Dynamic knapsack emulator
+
 Real time task scheduling emulator utilizing dynamic programming.
 
 ## Prerequisites
