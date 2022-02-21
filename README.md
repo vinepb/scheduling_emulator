@@ -13,5 +13,5 @@ Real time task scheduling emulator utilizing dynamic programming.
 - Clone project into workspace
 - Start Code Composer Studio IDE
 - Select `File`>`Open Projects from File System...`
-- Browse for the parent directory `scheduling_emulator`
+- Browse for the parent directory `scheduling_emulator_c2000`
 - Select both subdirectories `emulator_cpu1` and `emulator_cpu2`
