@@ -46,6 +46,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "driverlib.h"
 #include "device.h"
@@ -58,7 +59,7 @@
 #define USE_ADC 1
 
 #define TIMER0_PERIOD_MS 100
-#define SCIB_BAURATE 9600
+#define SCIA_BAURATE 9600
 //******************************************
 // Don't change this section************ ***
 #if !USE_TIMER
@@ -101,9 +102,9 @@ void initADCASOC(void);
 #else
 
 /**
- * @brief Initialize Serial Communication Interface B.
+ * @brief Initialize Serial Communication Interface A.
  */
-void initSCIB(void);
+void initSCIA(void);
 
 #endif
 
@@ -137,19 +138,19 @@ void main(void)
         GPIO_setDirectionMode(GPIO_pins[i], GPIO_DIR_MODE_OUT);
     }
 #else
-    // GPIO28 is the SCI Rx pin.
-    GPIO_setMasterCore(19, GPIO_CORE_CPU1);
-    GPIO_setPinConfig(GPIO_19_SCIRXDB);
-    GPIO_setDirectionMode(19, GPIO_DIR_MODE_IN);
-    GPIO_setPadConfig(19, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(19, GPIO_QUAL_ASYNC);
+    // Configuration for the SCI Rx pin.
+    GPIO_setMasterCore(DEVICE_GPIO_PIN_SCIRXDA, GPIO_CORE_CPU1);
+    GPIO_setPinConfig(DEVICE_GPIO_CFG_SCIRXDA);
+    GPIO_setDirectionMode(DEVICE_GPIO_PIN_SCIRXDA, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(DEVICE_GPIO_PIN_SCIRXDA, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(DEVICE_GPIO_PIN_SCIRXDA, GPIO_QUAL_ASYNC);
 
-    // GPIO29 is the SCI Tx pin.
-    GPIO_setMasterCore(18, GPIO_CORE_CPU1);
-    GPIO_setPinConfig(GPIO_18_SCITXDB);
-    GPIO_setDirectionMode(18, GPIO_DIR_MODE_OUT);
-    GPIO_setPadConfig(18, GPIO_PIN_TYPE_STD);
-    GPIO_setQualificationMode(18, GPIO_QUAL_ASYNC);
+    // Configuration for the SCI Tx pin.
+    GPIO_setMasterCore(DEVICE_GPIO_PIN_SCITXDA, GPIO_CORE_CPU1);
+    GPIO_setPinConfig(DEVICE_GPIO_CFG_SCITXDA);
+    GPIO_setDirectionMode(DEVICE_GPIO_PIN_SCITXDA, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(DEVICE_GPIO_PIN_SCITXDA, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(DEVICE_GPIO_PIN_SCITXDA, GPIO_QUAL_ASYNC);
 #endif
 
     // Initialize the PIE module and vector table.
@@ -162,6 +163,11 @@ void main(void)
     // Synchronize both the cores.
     IPC_sync(IPC_CPU1_L_CPU2_R, IPC_FLAG17);
 
+    // Enable global interrupts.
+    EINT;
+    // Enable real-time debug.
+    ERTM;
+
 #if USE_TIMER
 #if USE_ADC
     initADCA();
@@ -169,33 +175,44 @@ void main(void)
 #endif
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
 #else
-    initSCIB();
-    char receivedChar;
+    initSCIA();
+    uint32_t uartData;
     uint16_t rxStatus = 0U;
 #endif
-
-    // Enable global interrupts.
-    EINT;
-    // Enable real-time debug.
-    ERTM;
 
     while(1)
     {
 #if !USE_TIMER
-        // Read a character from FIFO.
-        // receivedChar = SCI_readCharBlockingFIFO(SCIB_BASE);
-        // rxStatus = SCI_getRxStatus(SCIB_BASE);
-        // if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
-        // {
-        //     //
-        //     //If Execution stops here there is some error
-        //     //Analyze SCI_getRxStatus() API return value
-        //     //
-        //     ESTOP0;
-        // }
-        // Echo back the received character.
-        receivedChar = '3';
-        SCI_writeCharBlockingNonFIFO(SCIB_BASE, receivedChar);
+        // Read a character from the FIFO.
+        uartData = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+
+        rxStatus = SCI_getRxStatus(SCIA_BASE);
+        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        {
+            //If Execution stops here there is some error
+            //Analyze SCI_getRxStatus() API return value
+            ESTOP0;
+        }
+
+        printf("CPU1: Sending data: %ld\n", uartData);
+
+        // Send a message without message queue
+        IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
+        0, 0, uartData);
+
+        // Wait for acknowledgment
+        IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
+
+        // Read response
+        uartData = IPC_getResponse(IPC_CPU1_L_CPU2_R);
+
+        printf("CPU1: Received data: %ld\n", uartData);
+
+        // Clear CPU interrupt flag
+        Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+
+        // Echo back the character.
+        SCI_writeCharBlockingFIFO(SCIA_BASE, (uint16_t)uartData);
 #endif
     }
 }
@@ -319,26 +336,26 @@ void initADCASOC(void)
 
 #else
 
-void initSCIB()
+void initSCIA()
 {
-    SCI_performSoftwareReset(SCIB_BASE);
+    SCI_performSoftwareReset(SCIA_BASE);
 
     // 8 char bits, 1 stop bit, no parity.
-    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, SCIB_BAURATE, (SCI_CONFIG_WLEN_8 |
+    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, SCIA_BAURATE, (SCI_CONFIG_WLEN_8 |
                                                                 SCI_CONFIG_STOP_ONE |
                                                                 SCI_CONFIG_PAR_NONE));
-    SCI_resetChannels(SCIB_BASE);
-    SCI_resetRxFIFO(SCIB_BASE);
-    SCI_resetTxFIFO(SCIB_BASE);
-    SCI_clearInterruptStatus(SCIB_BASE, SCI_INT_TXFF | SCI_INT_RXFF);
-    SCI_enableFIFO(SCIB_BASE);
-    SCI_enableModule(SCIB_BASE);
-    SCI_performSoftwareReset(SCIB_BASE);
+    SCI_resetChannels(SCIA_BASE);
+    SCI_resetRxFIFO(SCIA_BASE);
+    SCI_resetTxFIFO(SCIA_BASE);
+    SCI_clearInterruptStatus(SCIA_BASE, SCI_INT_TXFF | SCI_INT_RXFF);
+    SCI_enableFIFO(SCIA_BASE);
+    SCI_enableModule(SCIA_BASE);
+    SCI_performSoftwareReset(SCIA_BASE);
 
 #ifdef AUTOBAUD
     // Perform an autobaud lock.
     // SCI expects an 'a' or 'A' to lock the baud rate.
-    SCI_lockAutobaud(SCIB_BASE);
+    SCI_lockAutobaud(SCIA_BASE);
 #endif
 }
 
