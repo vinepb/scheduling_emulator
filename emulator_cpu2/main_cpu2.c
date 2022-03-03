@@ -118,7 +118,7 @@ __interrupt void ipc0_ISR(void)
 
     printf("CPU2: Received data: %ld\n", data);
 
-    dynamic_priority(SysTick, items);
+    dynamic_priority(items);
 
     items = dynamic_knapsack(data);
 

@@ -88,14 +88,10 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     // return best;
 }
 
-void dynamic_priority(uint32_t new_tick, uint32_t items)
+void dynamic_priority(uint32_t items)
 {
-    static uint32_t last_tick = 0;
     static uint32_t tick = 0;
     int i;
-
-    last_tick = tick;
-    tick = new_tick;
 
     for (i = 0; i < TASK_COUNT; i++)
     {
@@ -125,7 +121,7 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
         // Is task running?
         if (task_on_off_status[i] == true)
         {
-            task_executed_time[i] += tick - last_tick;
+            task_executed_time[i] += 1;
         }
         // Next deadline loss.
         if ((task_deadline[i] - task_computing_time[i] - tick) <= 0)
@@ -143,4 +139,6 @@ void dynamic_priority(uint32_t new_tick, uint32_t items)
             values[i] = 1;
         }
     }
+
+    tick += 1;
 }

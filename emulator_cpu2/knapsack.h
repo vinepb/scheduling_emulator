@@ -25,9 +25,8 @@ uint32_t dynamic_knapsack(uint32_t max_weight);
 /**
  * @brief Dynamically change tasks priority.
  * 
- * @param[in] new_tick Current tick.
  * @param[in] items Current items in the knapsack.
  */
-void dynamic_priority(uint32_t new_tick, uint32_t items);
+void dynamic_priority(uint32_t items);
 
 #endif /* KNAPSACK_H_ */
