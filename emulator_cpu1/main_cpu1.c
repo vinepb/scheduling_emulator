@@ -60,6 +60,8 @@
 
 #define TIMER0_PERIOD_MS 100
 #define SCIA_BAURATE 9600
+
+#define TASK_COUNT 3
 //******************************************
 // Don't change this section************ ***
 #if !USE_TIMER
@@ -113,6 +115,7 @@ void initSCIA(void);
  */
 void main(void)
 {
+    int j;
     // Configure system clock and PLL, enable peripherals, and configure
     // flash if used.
     Device_init();
@@ -211,8 +214,11 @@ void main(void)
         // Clear CPU interrupt flag
         Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
 
-        // Echo back the character.
-        SCI_writeCharBlockingFIFO(SCIA_BASE, (uint16_t)uartData);
+        for (j = 0; j < TASK_COUNT; j++)
+        {
+            // For each bit in uartData, send '1' or '0' via SCI
+            ((uartData >> j) & 1UL) ? SCI_writeCharBlockingFIFO(SCIA_BASE, '1') : SCI_writeCharBlockingFIFO(SCIA_BASE, '0');
+        }
 #endif
     }
 }
