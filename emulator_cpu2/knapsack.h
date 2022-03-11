@@ -29,4 +29,13 @@ uint32_t dynamic_knapsack(uint32_t max_weight);
  */
 void dynamic_priority(uint32_t items);
 
+/**
+ * @brief Simulate the mppt algorithm.
+ *
+ * @param[in] PspTotalNew Total solar panel power.
+ * @param[in] PloadNew Current load consumption.
+ * @return @c uint32_t Available power.
+ */
+uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t PloadNew);
+
 #endif /* KNAPSACK_H_ */

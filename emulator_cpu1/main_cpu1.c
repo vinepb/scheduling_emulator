@@ -179,37 +179,41 @@ void main(void)
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
 #else
     initSCIA();
-    uint32_t uartData;
+    uint32_t uartData[2];
     uint16_t rxStatus = 0U;
 #endif
+    uint32_t IPCresponse;
 
     while(1)
     {
 #if !USE_TIMER
-        // Read a character from the FIFO.
-        uartData = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
-
-        rxStatus = SCI_getRxStatus(SCIA_BASE);
-        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        for (j = 0; j < 2; j++)
         {
-            //If Execution stops here there is some error
-            //Analyze SCI_getRxStatus() API return value
-            ESTOP0;
+            // Read a character from the FIFO.
+            uartData[j] = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+
+            rxStatus = SCI_getRxStatus(SCIA_BASE);
+            if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+            {
+                //If Execution stops here there is some error
+                //Analyze SCI_getRxStatus() API return value
+                ESTOP0;
+            }
         }
 
-        printf("CPU1: Sending data: %ld\n", uartData);
+        printf("CPU1: Sending data: %ld %ld\n", uartData[0], uartData[1]);
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        0, 0, uartData);
+        0, uartData[0], uartData[1]);
 
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
 
         // Read response
-        uartData = IPC_getResponse(IPC_CPU1_L_CPU2_R);
+        IPCresponse = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
-        printf("CPU1: Received data: %ld\n", uartData);
+        printf("CPU1: Received data: %ld\n", IPCresponse);
 
         // Clear CPU interrupt flag
         Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
@@ -217,7 +221,7 @@ void main(void)
         for (j = 0; j < TASK_COUNT; j++)
         {
             // For each bit in uartData, send '1' or '0' via SCI
-            ((uartData >> j) & 1UL) ? SCI_writeCharBlockingFIFO(SCIA_BASE, '1') : SCI_writeCharBlockingFIFO(SCIA_BASE, '0');
+            ((IPCresponse >> j) & 1UL) ? SCI_writeCharBlockingFIFO(SCIA_BASE, '1') : SCI_writeCharBlockingFIFO(SCIA_BASE, '0');
         }
 #endif
     }

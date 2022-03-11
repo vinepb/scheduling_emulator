@@ -18,8 +18,8 @@
 #define TASK_COUNT 3
 #define SUM_OF_WEIGHTS 60
 const uint32_t      weights[TASK_COUNT] = {20, 10, 30};
-const uint32_t      task_period[TASK_COUNT] = {250, 350, 600};
-const uint32_t      task_computing_time[TASK_COUNT] = {200, 100, 300};
+const uint32_t      task_period[TASK_COUNT] = {20, 30, 60};
+const uint32_t      task_computing_time[TASK_COUNT] = {10, 20, 30};
 volatile uint32_t   values[TASK_COUNT];
 volatile bool       task_on_off_status[TASK_COUNT];
 volatile uint32_t   task_deadline[TASK_COUNT];

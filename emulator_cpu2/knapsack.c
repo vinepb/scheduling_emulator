@@ -142,3 +142,47 @@ void dynamic_priority(uint32_t items)
 
     tick += 1;
 }
+
+
+uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t Pload)
+{
+    static uint32_t PspTotal = 0UL, PspTotalOld = 0UL;
+    static uint32_t perturb = 0, perturbOld = 0;
+    static const uint32_t step = 1;
+    uint32_t perturbAux;
+    uint32_t W;
+
+    PspTotalOld = PspTotal;
+    PspTotal = PspTotalNew;
+    perturbAux = perturbOld;
+    perturbOld = perturb;
+
+    if ((PspTotalOld > PspTotal) && (perturbOld == 0))
+    {
+        perturb = 1;
+    }
+    else if ((PspTotalOld > PspTotal) && (perturbOld == 1))
+    {
+        perturb = 0;
+    }
+
+    if ((PspTotalOld < PspTotal) && (perturbOld == 0))
+    {
+        perturb = 0;
+    }
+    else if ((PspTotalOld < PspTotal) && (perturbOld == 1))
+    {
+        perturb = 1;
+    }
+
+    if (PspTotalOld == PspTotal)
+    {
+        perturb = perturbAux;
+    }
+
+    (perturb) ? (W = Pload - step) : (W = Pload + step);
+    if (W <= 1) { W = 1; }
+
+    return W;
+}
+
