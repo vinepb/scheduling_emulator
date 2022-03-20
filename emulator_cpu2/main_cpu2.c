@@ -104,20 +104,21 @@ void main(void)
 
     while(1)
     {
+        // Do nothing.
+        NOP;
     }
 }
 
 __interrupt void ipc0_ISR(void)
 {
     static uint32_t items = 0;
-    static uint32_t PspTotal, Pload, W;
-    uint32_t cmd;
+    uint32_t PspTotal = 0UL, Pload = 0UL, W = 0UL, addr = 0UL;
 
     // Read the data from the IPC registers.
     IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false,
-    &cmd, &PspTotal, &Pload);
+    &PspTotal, &addr, &Pload);
 
-    printf("CPU2: Received data: %ld %ld\n", PspTotal, Pload);
+    printf("CPU2: Received data: %lu %lu\n", PspTotal, Pload);
 
     dynamic_priority(items);
 
@@ -125,7 +126,7 @@ __interrupt void ipc0_ISR(void)
 
     items = dynamic_knapsack(W);
 
-    printf("CPU2: Sending data: %ld\n", items);
+    printf("CPU2: Sending data: %lu\n", items);
 
     // Send response.
     IPC_sendResponse(IPC_CPU2_L_CPU1_R, items);

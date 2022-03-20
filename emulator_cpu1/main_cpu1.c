@@ -59,9 +59,9 @@
 #define USE_ADC 1
 
 #define TIMER0_PERIOD_MS 100
-#define SCIA_BAURATE 9600
+#define SCIA_BAURATE 115200
 
-#define TASK_COUNT 3
+#define TASK_COUNT 4
 //******************************************
 // Don't change this section************ ***
 #if !USE_TIMER
@@ -179,7 +179,7 @@ void main(void)
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
 #else
     initSCIA();
-    uint32_t uartData[2];
+    uint32_t PspTotal = 0UL, Pload = 0UL;
     uint16_t rxStatus = 0U;
 #endif
     uint32_t IPCresponse;
@@ -187,25 +187,34 @@ void main(void)
     while(1)
     {
 #if !USE_TIMER
-        for (j = 0; j < 2; j++)
-        {
-            // Read a character from the FIFO.
-            uartData[j] = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
 
-            rxStatus = SCI_getRxStatus(SCIA_BASE);
-            if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
-            {
-                //If Execution stops here there is some error
-                //Analyze SCI_getRxStatus() API return value
-                ESTOP0;
-            }
+        // Read a character from the FIFO.
+        PspTotal = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+
+        rxStatus = SCI_getRxStatus(SCIA_BASE);
+        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        {
+            //If Execution stops here there is some error
+            //Analyze SCI_getRxStatus() API return value
+            ESTOP0;
         }
 
-        printf("CPU1: Sending data: %ld %ld\n", uartData[0], uartData[1]);
+        // Read another character from the FIFO.
+        Pload = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+
+        rxStatus = SCI_getRxStatus(SCIA_BASE);
+        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        {
+            //If Execution stops here there is some error
+            //Analyze SCI_getRxStatus() API return value
+            ESTOP0;
+        }
+
+        printf("CPU1: Sending data: %lu %lu\n", PspTotal, Pload);
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        0, uartData[0], uartData[1]);
+        PspTotal, 0, Pload);
 
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
@@ -213,7 +222,13 @@ void main(void)
         // Read response
         IPCresponse = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
-        printf("CPU1: Received data: %ld\n", IPCresponse);
+        // printf("CPU1: Received data: %lu\n", IPCresponse);
+        printf("CPU1: Received data: 0b");
+        for (j = TASK_COUNT - 1; j >= 0; j--)
+        {
+            printf(((IPCresponse >> j) & 0x1UL) ? "1" : "0");
+        }
+        printf("\n");
 
         // Clear CPU interrupt flag
         Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
