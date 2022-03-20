@@ -19,9 +19,9 @@ PAGE 1 :
    BOOT_RSVD       : origin = 0x000002, length = 0x0000A0     /* Part of M0, BOOT rom will use this for stack */
    RAMM1           : origin = 0x000400, length = 0x0003F8     /* on-chip RAM block M1 */
 //   RAMM1_RSVD      : origin = 0x0007F8, length = 0x000008     /* Reserve and do not use for code as per the errata advisory "Memory: Prefetching Beyond Valid Memory" */
-   RAMD1           : origin = 0x00B800, length = 0x000800
+   RAMD1           : origin = 0x00B800, length = 0x004000
 
-   RAMLS5      : origin = 0x00A800, length = 0x000800
+   RAMLS5      : origin = 0x00A800, length = 0x001000
 
    CANA_MSG_RAM     : origin = 0x049000, length = 0x000800
    CANB_MSG_RAM     : origin = 0x04B000, length = 0x000800
@@ -34,7 +34,7 @@ PAGE 1 :
 SECTIONS
 {
    codestart        : > BEGIN,     PAGE = 0
-   .text            : >>RAMD0 |  RAMLS0 | RAMLS1 | RAMLS2 | RAMLS3 | RAMLS4,   PAGE = 0
+   .text            : >> RAMD0 | RAMLS0 | RAMLS1 | RAMLS2 | RAMLS3 | RAMLS4,   PAGE = 0
    .cinit           : > RAMM0,     PAGE = 0
    .switch          : > RAMM0,     PAGE = 0
    .reset           : > RESET,     PAGE = 0, TYPE = DSECT /* not used, */
@@ -45,7 +45,7 @@ SECTIONS
    .bss:output      : > RAMLS3,    PAGE = 0
    .init_array      : > RAMM0,     PAGE = 0
    .const           : > RAMLS5,    PAGE = 1
-   .data            : > RAMLS5,    PAGE = 1
+   .data            : > RAMD1,    PAGE = 1
    .sysmem          : > RAMLS5,    PAGE = 1
 #else
    .pinit           : > RAMM0,     PAGE = 0
