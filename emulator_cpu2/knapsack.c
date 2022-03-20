@@ -15,6 +15,8 @@
 #include "tasks.h"
 #include "knapsack.h"
 
+uint32_t aux_matrix[TASK_COUNT + 1][SUM_OF_WEIGHTS + 1] = {0};
+
 /**
  * @brief Calculates the maximum between two numbers.
  * 
@@ -30,7 +32,6 @@ static uint32_t max(uint32_t a, uint32_t b)
 
 uint32_t dynamic_knapsack(uint32_t max_weight)
 {
-    uint32_t aux_matrix[TASK_COUNT + 1][SUM_OF_WEIGHTS + 1];
     uint32_t best = 0;
     uint32_t items = 0, k = 0;
     int i, j;
