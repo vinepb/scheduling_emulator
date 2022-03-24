@@ -53,6 +53,8 @@
 
 #include "knapsack.h"
 
+#define RECV_W 0
+
 static uint32_t SysTick = 0;
 
 /**
@@ -112,18 +114,30 @@ void main(void)
 __interrupt void ipc0_ISR(void)
 {
     static uint32_t items = 0;
+#if !RECV_W
     uint32_t PspTotal = 0UL, Pload = 0UL, W = 0UL, addr = 0UL;
+#else
+    uint32_t cmd = 0UL, W = 0UL, addr = 0UL;
+#endif
 
+#if !RECV_W
     // Read the data from the IPC registers.
     IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false,
     &PspTotal, &addr, &Pload);
 
     printf("CPU2: Received data: %lu %lu\n", PspTotal, Pload);
+#else
+    // Read the data from the IPC registers.
+    IPC_readCommand(IPC_CPU2_L_CPU1_R, IPC_FLAG0, false,
+    &cmd, &addr, &W);
 
+    printf("CPU2: Received data: %lu\n", W);
+#endif
     dynamic_priority(items);
 
+#if !RECV_W
     W = perturb_observe(PspTotal, Pload);
-
+#endif
     items = dynamic_knapsack(W);
 
     printf("CPU2: Sending data: %lu\n", items);

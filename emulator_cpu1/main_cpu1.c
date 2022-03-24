@@ -57,13 +57,14 @@
 // User config defines *********************
 #define USE_TIMER 0
 #define USE_ADC 1
+#define RECV_W 0
 
 #define TIMER0_PERIOD_MS 100
-#define SCIA_BAURATE 115200
+#define SCIA_BAURATE 9600
 
-#define TASK_COUNT 4
+#define TASK_COUNT 8
 //******************************************
-// Don't change this section************ ***
+// Don't change this section ***************
 #if !USE_TIMER
 #ifdef USE_ADC
 #undef USE_ADC
@@ -179,7 +180,11 @@ void main(void)
     initCPUTimer0(DEVICE_SYSCLK_FREQ, TIMER0_PERIOD_MS * 1000UL);
 #else
     initSCIA();
+#if !RECV_W
     uint32_t PspTotal = 0UL, Pload = 0UL;
+#else
+    uint32_t W = 0UL;
+#endif
     uint16_t rxStatus = 0U;
 #endif
     uint32_t IPCresponse;
@@ -187,7 +192,7 @@ void main(void)
     while(1)
     {
 #if !USE_TIMER
-
+#if !RECV_W
         // Read a character from the FIFO.
         PspTotal = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
 
@@ -215,7 +220,24 @@ void main(void)
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
         PspTotal, 0, Pload);
+#else
+        // Read a character from the FIFO.
+        W = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
 
+        rxStatus = SCI_getRxStatus(SCIA_BASE);
+        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        {
+            //If Execution stops here there is some error
+            //Analyze SCI_getRxStatus() API return value
+            ESTOP0;
+        }
+
+        printf("CPU1: Sending data: %lu\n", W);
+
+        // Send a message without message queue
+        IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
+        0, 0, W);
+#endif
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
 
