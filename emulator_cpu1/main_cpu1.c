@@ -57,12 +57,12 @@
 // User config defines *********************
 #define USE_TIMER 0
 #define USE_ADC 1
-#define RECV_W 0
+#define RECV_W 1
 
 #define TIMER0_PERIOD_MS 100
 #define SCIA_BAURATE 9600
 
-#define TASK_COUNT 8
+#define TASK_COUNT 7
 //******************************************
 // Don't change this section ***************
 #if !USE_TIMER
