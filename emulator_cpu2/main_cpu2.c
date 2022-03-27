@@ -114,6 +114,8 @@ void main(void)
 __interrupt void ipc0_ISR(void)
 {
     static uint32_t items = 0;
+    uint32_t deadline_loss_counter = 0;
+    uint32_t IPCResponse = 0;
 #if !RECV_W
     uint32_t PspTotal = 0UL, Pload = 0UL, W = 0UL, addr = 0UL;
 #else
@@ -133,17 +135,20 @@ __interrupt void ipc0_ISR(void)
 
     printf("CPU2: Received data: %lu\n", W);
 #endif
-    dynamic_priority(items);
+    deadline_loss_counter = dynamic_priority(items);
 
 #if !RECV_W
     W = perturb_observe(PspTotal, Pload);
 #endif
     items = dynamic_knapsack(W);
 
-    printf("CPU2: Sending data: %lu\n", items);
+    // Merge items and deadline_loss_counter into IPC_ResponseData
+    IPCResponse = (deadline_loss_counter << 16) | items;
+
+    printf("CPU2: Sending data: %lu\n", IPCResponse);
 
     // Send response.
-    IPC_sendResponse(IPC_CPU2_L_CPU1_R, items);
+    IPC_sendResponse(IPC_CPU2_L_CPU1_R, IPCResponse);
 
     // Acknowledge IPC0 flag from remote.
     IPC_ackFlagRtoL(IPC_CPU2_L_CPU1_R, IPC_FLAG0);

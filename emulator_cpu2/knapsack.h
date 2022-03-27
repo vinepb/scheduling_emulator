@@ -26,8 +26,9 @@ uint32_t dynamic_knapsack(uint32_t max_weight);
  * @brief Dynamically change tasks priority.
  * 
  * @param[in] items Current items in the knapsack.
+ * @return @c uint32_t Deadline loss counter.
  */
-void dynamic_priority(uint32_t items);
+uint32_t dynamic_priority(uint32_t items);
 
 /**
  * @brief Simulate the mppt algorithm.

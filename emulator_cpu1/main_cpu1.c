@@ -187,7 +187,8 @@ void main(void)
 #endif
     uint16_t rxStatus = 0U;
 #endif
-    uint32_t IPCresponse;
+    uint32_t IPCresponse = 0UL;
+    uint16_t deadline_loss_counter = 0U;
 
     while(1)
     {
@@ -244,13 +245,16 @@ void main(void)
         // Read response
         IPCresponse = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
+        // Get deadline_loss_counter from first half of response
+        deadline_loss_counter = (uint16_t) (IPCresponse >> 16);
+
         // printf("CPU1: Received data: %lu\n", IPCresponse);
         printf("CPU1: Received data: 0b");
         for (j = TASK_COUNT - 1; j >= 0; j--)
         {
             printf(((IPCresponse >> j) & 0x1UL) ? "1" : "0");
         }
-        printf("\n");
+        printf(" %d\n", deadline_loss_counter);
 
         // Clear CPU interrupt flag
         Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
@@ -260,6 +264,7 @@ void main(void)
             // For each bit in uartData, send '1' or '0' via SCI
             ((IPCresponse >> j) & 1UL) ? SCI_writeCharBlockingFIFO(SCIA_BASE, '1') : SCI_writeCharBlockingFIFO(SCIA_BASE, '0');
         }
+        SCI_writeCharBlockingFIFO(SCIA_BASE, deadline_loss_counter);
 #endif
     }
 }

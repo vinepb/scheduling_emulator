@@ -89,9 +89,10 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     // return best;
 }
 
-void dynamic_priority(uint32_t items)
+uint32_t dynamic_priority(uint32_t items)
 {
     static uint32_t tick = 0;
+    static uint32_t deadline_loss_counter = 0;
     int i;
 
     for (i = 0; i < TASK_COUNT; i++)
@@ -104,14 +105,23 @@ void dynamic_priority(uint32_t items)
         {
             task_on_off_status[i] = false;
         }
+    }
+
+    for (i = 0; i < TASK_COUNT; i++)
+    {
         // Did the task finish?
         if (task_computing_time[i] - task_executed_time[i] <= 0)
         {
             // Variable initialization.
             task_on_off_status[i] = false;
             task_executed_time[i] = 0;
-            values[i] = 0;
+            values[i] = 1;
             task_already_executed[i] = true;
+        }
+        // Check for deadline loss.
+        if ((tick == task_deadline[i]) && (task_already_executed[i] == false))
+        {
+            deadline_loss_counter++;
         }
         // New deadline calculation.
         if (tick >= task_deadline[i])
@@ -140,8 +150,17 @@ void dynamic_priority(uint32_t items)
             values[i] = 1;
         }
     }
+    if (TASK_COUNT >= 4)
+    {
+        if (task_already_executed[4] == true)
+        {
+            values[4] = 0;
+        }
+    }
 
     tick += 1;
+
+    return deadline_loss_counter;
 }
 
 
