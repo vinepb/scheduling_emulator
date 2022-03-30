@@ -57,7 +57,7 @@
 // User config defines *********************
 #define USE_TIMER 0
 #define USE_ADC 1
-#define RECV_W 1
+#define RECV_W 0
 
 #define TIMER0_PERIOD_MS 100
 #define SCIA_BAURATE 9600
@@ -216,6 +216,9 @@ void main(void)
             ESTOP0;
         }
 
+        PspTotal *= 10;
+        Pload *= 10;
+
         printf("CPU1: Sending data: %lu %lu\n", PspTotal, Pload);
 
         // Send a message without message queue
@@ -248,7 +251,6 @@ void main(void)
         // Get deadline_loss_counter from first half of response
         deadline_loss_counter = (uint16_t) (IPCresponse >> 16);
 
-        // printf("CPU1: Received data: %lu\n", IPCresponse);
         printf("CPU1: Received data: 0b");
         for (j = TASK_COUNT - 1; j >= 0; j--)
         {
@@ -264,7 +266,10 @@ void main(void)
             // For each bit in uartData, send '1' or '0' via SCI
             ((IPCresponse >> j) & 1UL) ? SCI_writeCharBlockingFIFO(SCIA_BASE, '1') : SCI_writeCharBlockingFIFO(SCIA_BASE, '0');
         }
-        SCI_writeCharBlockingFIFO(SCIA_BASE, deadline_loss_counter);
+
+        // Send uint16_t as two separate char messages (less significant byte first)
+        SCI_writeCharBlockingFIFO(SCIA_BASE, (deadline_loss_counter & 0xFFU));
+        SCI_writeCharBlockingFIFO(SCIA_BASE, (deadline_loss_counter >> 8));
 #endif
     }
 }

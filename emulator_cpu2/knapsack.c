@@ -119,7 +119,7 @@ uint32_t dynamic_priority(uint32_t items)
             task_already_executed[i] = true;
         }
         // Check for deadline loss.
-        if ((tick == task_deadline[i]) && (task_already_executed[i] == false))
+        if ((tick > 0) && (tick == task_deadline[i]) && (task_already_executed[i] == false))
         {
             deadline_loss_counter++;
         }
