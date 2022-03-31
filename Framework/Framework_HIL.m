@@ -1,0 +1,451 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Framework with Task Scheduler: Perturb & Observe method and Knapsack problem %%%  
+% Description: 
+% Input:                   
+% Output:
+% Author: Laio O. Seman, Sara Vega Martinez e Vinicius P. Bernardo  
+% UFSC 
+% Created Avril 2020
+close all;
+clear all;
+clc;
+
+%% Input 
+load('Detumbling_Irradiance_test2.mat');
+
+StepTimeVector = IrradianceTotal(:,1);
+Qtot1 = IrradianceTotal(:,2);
+Qtot2 = IrradianceTotal(:,3);
+Qtot3 = IrradianceTotal(:,4);
+Qtot4 = IrradianceTotal(:,5);
+Qtot5 = IrradianceTotal(:,6);
+Qtot6 = IrradianceTotal(:,7);
+
+%% Temperature
+
+Qthermal1 = IrradianceTotal(:,2);
+Qthermal2 = IrradianceTotal(:,3);
+Qthermal3 = IrradianceTotal(:,4);
+Qthermal4 = IrradianceTotal(:,5);
+Qthermal5 = IrradianceTotal(:,6);
+Qthermal6 = IrradianceTotal(:,7);
+
+%% Time lenght
+Time_length = size(Qtot1);
+
+% Read SoC and voltage battery vector
+%load('VoC_Voltage'); % SoC - Voltage Battery
+
+% Power Load
+%PowerLoad = load('TablePLoad');
+%PLoad = [2.5; 2.0; 1.5; 1.0; 0] + 0.25;
+%VT_set_bat = [15; 10; 7.5; 5; 0] + 273;
+VT_set_bat = [0; 0; 0; 0; 0] + 273;
+%TableL = PowerLoad.PLoad(:,1);
+TableSoC = [0.95; 0.9; 0.85; 0.8; 0];
+
+%% Eclipse
+% load('Detumbling_Eclipse');
+% Xi = eclipse(:,2);
+
+%% Parameters
+Rh = 10;                        % Heater Resistor
+StepTime = StepTimeVector(2,:) - StepTimeVector(1,:);
+BatteryCapacity = 3;            % Battery Capacity Ah 
+perturb = 1;
+
+%% Initialization
+histerese = 0;
+BTotal = 0;
+PspTotalM = 0 ;
+PhM = 0;
+PmpptM = 0;
+P_TPayloadM  = 0;
+P_TPayload3M =  0;
+P_BeaconM  = 0;
+u_anterior = 0;
+erro_anterior = 0;
+count_L = 0;
+trocou_L = 0;
+count_B = 0;
+
+SoC(1) = 0.9;
+SoC(2) = 0.9;
+
+VBat(1) = 4.2;   % voltage battery
+VBat(2) = 4.2;   % voltage battery
+
+%Initialization do Framework(para fazer)
+%load('tarefas3');
+%load('tarefa2');
+%load('tarefas4');
+%load('tarefas5'); % igual que a 2 mas sem a tarefa temeratura
+%load('tarefas6'); % igual que a 2 mas sem as tarefas dos payloads
+%load('tarefas7'); % igual que a 2 mas sem as tarefas dos payloads ni Beacon
+%load('tarefas8'); % aumento da frecuencia das tarefas
+load('tarefas7_test9');
+J = length(unnamed3(:,1));
+n = J;
+% n = 10;
+% J = n;
+j = unnamed3(1:n,1);  % numero tarefa
+U = unnamed3(1:n,6);  % prioridade da tarefa
+R = unnamed3(1:n,4); % recurso da tarefa
+%Dl = unnamed3(1:n,3)/10; % Deadline e periodo
+Dl = unnamed3(1:n,3); % Deadline e periodo
+C = unnamed3(1:n,2);  % tempo de execuçao
+X = unnamed3(1:n,5);  % tarefa executada ou não
+a = unnamed3(1:n,5);  % quanto tempo esta executando
+
+M = 10000;
+
+Dl_lost = 0;
+
+for i = 1:J
+   % d(i) = 10 * Dl(i);
+    d(i) =  Dl(i) + 3;
+    R(i) = round(R(i) * 100);
+    perdeu(i) = 0;
+    %X(i) = 1; 
+    Ex(i) = 0;
+    Contador(i) = 0;
+end
+
+perturb(1) = 1;
+perturb(2) = 1;
+
+%Time_temperaure = 2; % Time of temperature vector, the temperature change every 10 seconds
+ILoad(1) = 0; 
+ILoad(2) = 0;
+
+
+TSet(1) = VT_set_bat(1,:);
+TSet(2) = VT_set_bat(1,:);
+TSet(3) = VT_set_bat(1,:);
+D(1) = 0;   % Duty cycle
+D(2) = 0;   % Duty cycle
+D(3) = 0;   % Duty cycle
+%L(1) = 5;  % Power level 5
+%L(2) = 5;  % Power level 5
+%L(3) = 5;  % Power level 5
+
+Ih(1) = VBat(1) * D(1)/Rh;  % current heater 
+Ph(1) = Ih(1) * VBat(1);    % Power Heater
+Ih(2) = Ih(1);  % current heater
+Ph(2) = Ph(1);  % Power Heater
+
+Tini = 275; % Precisa para poder entrar na funcao
+
+% Solar Panel Battery Temperaures 
+[Tsp1(1),Tsp2(1),Tsp3(1),Tsp4(1),Tsp5(1),Tsp6(1),TBat(1)] = ...
+Modelo_termico_function(Qthermal1(1),Qthermal2(1),Qthermal3(1)...
+,Qthermal4(1),Qthermal5(1),Qthermal6(1),Tini,Tini,Tini,Tini,Tini,Tini,Tini,Ph(1)); %incluir Qg como input num segundo momento
+
+[Tsp1(2),Tsp2(2),Tsp3(2),Tsp4(2),Tsp5(2),Tsp6(2),TBat(2)] = ... 
+Modelo_termico_function(Qthermal1(2),Qthermal2(2),Qthermal3(2)...
+,Qthermal4(2),Qthermal5(2),Qthermal6(2),Tini,Tini,Tini,Tini,Tini,Tini,Tini,Ph(2)); %incluir Qg como input num segundo momento
+
+% Current solar panel
+V = [0:0.01:4.5];  % V for MPPT
+
+Isp1(1) = solar_cellAzur(VBat(1),Qtot1(1),Tsp1(1));
+Isp2(1) = solar_cellAzur(VBat(1),Qtot2(1),Tsp2(1));
+Isp3(1) = solar_cellAzur(VBat(1),Qtot3(1),Tsp3(1));
+Isp4(1) = solar_cellAzur(VBat(1),Qtot4(1),Tsp4(1));
+Isp5(1) = solar_cellAzur(VBat(1),Qtot5(1),Tsp5(1));
+Isp6(1) = solar_cellAzur(VBat(1),Qtot6(1),Tsp6(1));
+
+Isp(1) = Isp1(1) + Isp2(1) + Isp3(1) + Isp4(1) + Isp5(1) + Isp6(1);
+
+if (Isp(1) < 0)                   % Ecplipse, solar current negative
+   Isp(1) = 0.00001;
+end
+
+Isp1(2) = Isp1(1);
+Isp2(2) = Isp2(1);
+Isp3(2) = Isp3(1);
+Isp4(2) = Isp4(1);
+Isp5(2) = Isp5(1);
+Isp6(2) = Isp6(1);
+
+
+Isp(2) = Isp(1);
+PspTotal(1) = Isp(1) * VBat(1);
+PspTotal(2) = PspTotal(1);
+
+Ibat(1) = Ih(1) + ILoad(1) - Isp(1) ;      % Current Battery,   Ibat = Ih + Iload - Isp
+SoC(1)  = SoC(1) -(Ibat(1) * StepTime / (BatteryCapacity * 3600));
+VBat(1) = battery(SoC(1),Ibat(1),20,StepTime);
+Ibat(2) = Ibat(1);                          % Current Battery,   Ibat = Ih + Iload - Isp
+SoC(2)  = SoC(1);
+VBat(2) = VBat(1);
+W(1) = 0;
+W(2) = 0;
+W(3) = 0;
+% Power balance
+B(1) = (Isp(1) - Ih(1) - ILoad(1)) * VBat(1);
+B(2) = B(1);
+PLoad(1) = ILoad(1) *  VBat(1) ;
+PLoad(2) = ILoad(1) *  VBat(1) ;
+PLoadTotal = PLoad(2) + PLoad(1);
+P_TPayload(1) = 0;
+P_TPayload(2) = 0;
+P_TPayload3(1) = 0;
+P_TPayload3(2) = 0;
+P_Beacon(1) = 0;
+P_Beacon(2) = 0;
+
+%% Framework 
+%Time_length = round(Time_length / 1.5);
+Time_length = round(Time_length);
+%Time_length = 20000;
+for t = 3:Time_length % 
+
+    TimerS(t) = t;    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compute with Newton method
+    Vbat_actual = VBat(t-1);
+    Vbat_old = Vbat_actual + 0.5;
+    
+    %disp(t)
+    
+    while (abs(Vbat_actual - Vbat_old)> 1e-3) 
+        Vbat_old = Vbat_actual;
+      
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Load
+        
+        PLoad(t) = 0;
+        Ph(t) = 0;
+        P_TPayload3(t) = 0;
+        P_TPayload(t) = 0;
+        P_Beacon(t) = 0;
+        for i = 1:J
+            if X(i) == 1
+                if i == 4
+                    Ph(t) = R(4)/1000;  % Heater           
+                else   
+                    PLoad(t) = PLoad(t) + R(i);   % Load        
+                end
+            end
+        end
+        
+
+        if X(1)  == 1
+            P_TPayload(t) = R(1); 
+        end
+        if X(2)  == 1  
+            P_TPayload(t) =  P_TPayload(t) + R(2);
+        end
+
+        if X(3)  == 1  
+            P_Beacon(t) =  R(3);
+        end
+        
+        P_TPayload(t) = P_TPayload(t)/1000;
+        P_Beacon(t) = P_Beacon(t)/1000;
+        PLoad(t) = PLoad(t)/1000;
+        
+        
+        % P_TPayload3(t) = (W(t-1) - PLoad(t) - Ph(t)) * 1; % case 2
+        % P_Beacon(t) = (W(t-1) - PLoad(t) - Ph(t)) * 0.10; % case 2
+
+        % ILoad(t) = (PLoad(t) + P_TPayload(t) + P_Beacon(t)) / Vbat_actual;%3.3;
+        ILoad(t) = (PLoad(t) + P_TPayload3(t)) / Vbat_actual;%3.3;
+    
+        % ILoad(t) = PLoad(t) / Vbat_actual;%3.3;
+        Ih(t) = Ph(t)/Vbat_actual;
+   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Temperature (calculo da temperatura)
+
+        [Tsp1(t),Tsp2(t),Tsp3(t),Tsp4(t),Tsp5(t),Tsp6(t),TBat(t)] = ...
+         Modelo_termico_function(Qthermal1(t),Qthermal2(t),Qthermal3(t),Qthermal4(t),...
+         Qthermal5(t),Qthermal6(t),Tsp1(t-1),Tsp2(t-1),Tsp3(t-1),Tsp4(t-1),Tsp5(t-1),...
+         Tsp6(t-1),TBat(t-1),Ph(t)); %incluir Qg como input num segundo momento
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Solar panel 
+        
+        Isp1(t) = solar_cellAzur(Vbat_actual,Qtot1(t),Tsp1(t));
+        Isp2(t) = solar_cellAzur(Vbat_actual,Qtot2(t),Tsp2(t));
+        Isp3(t) = solar_cellAzur(Vbat_actual,Qtot3(t),Tsp3(t));
+        Isp4(t) = solar_cellAzur(Vbat_actual,Qtot4(t),Tsp4(t));
+        Isp5(t) = solar_cellAzur(Vbat_actual,Qtot5(t),Tsp5(t));
+        Isp6(t) = solar_cellAzur(Vbat_actual,Qtot6(t),Tsp6(t));
+        
+        Isp(t) = 0;
+        if (Isp1(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp1(t);
+        end
+        if (Isp2(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp2(t);
+        end
+        if (Isp3(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp3(t);
+        end
+        if (Isp4(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp4(t);
+        end
+        if (Isp5(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp5(t);
+        end
+        if (Isp6(t) > 0)                   % solar current negative
+            Isp(t) = Isp(t) + Isp6(t);
+        end
+
+        PspTotal(t) = Isp(t) * Vbat_actual;
+    
+        %MPPT 
+        I1 = solar_cellAzur(V,Qtot1(t),Tsp1(t));
+        I2 = solar_cellAzur(V,Qtot2(t),Tsp2(t));
+        I3 = solar_cellAzur(V,Qtot3(t),Tsp3(t));
+        I4 = solar_cellAzur(V,Qtot4(t),Tsp4(t));
+        I5 = solar_cellAzur(V,Qtot5(t),Tsp5(t));
+        I6 = solar_cellAzur(V,Qtot6(t),Tsp6(t));
+        
+        P = 0;
+        if (I1(1) > 0)
+            P = P + I1;
+        end
+        if (I2(1) > 0)
+            P = P + I2;
+        end
+        if (I3(1) > 0)
+            P = P + I3;
+        end
+        if (I4(1) > 0)
+            P = P + I4;
+        end
+        if (I5(1) > 0)
+            P = P + I5;
+        end
+        if (I6(1) > 0)
+            P = P + I6;
+        end
+        
+        
+        P = P .* V;
+        Pmppt(t) = max (P);
+        idx = find(P == Pmppt(t));
+        
+        if P < 0.0001
+            Vmppt(t) = 0; % Open-current voltage at T1 [V]. input Celsius
+        else
+            Vmppt(t)=V(idx);
+        end
+    
+        I1mppt(t) = solar_cellAzur(Vmppt(t),Qtot1(t),Tsp1(t));
+        I2mppt(t) = solar_cellAzur(Vmppt(t),Qtot2(t),Tsp2(t));
+        I3mppt(t) = solar_cellAzur(Vmppt(t),Qtot3(t),Tsp3(t));
+        I4mppt(t) = solar_cellAzur(Vmppt(t),Qtot4(t),Tsp4(t));
+        I5mppt(t) = solar_cellAzur(Vmppt(t),Qtot5(t),Tsp5(t));
+        I6mppt(t) = solar_cellAzur(Vmppt(t),Qtot6(t),Tsp6(t));
+    
+     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Battery
+        Ibat(t) = Isp(t) - Ih(t) - ILoad(t) ;      % Current Battery,   Ibat = Ih + Iload - Isp
+        
+        % Proteccion undarvoltage 2.4V
+        if Vbat_actual == 2.4
+            Ibat(t) = 0;  
+        end  
+        
+        SoC(t) = SoC(t-1) + (Ibat(t) * StepTime / (BatteryCapacity * 3600));
+        
+        if (SoC(t) > 1)                   % Ecplipse, solar current negative
+            SoC(t) = 1;
+        end
+        
+        VBat(t) = battery(SoC(t),Ibat(t),TBat(t),StepTime);
+        
+        Vbat_actual = VBat(t);
+    end
+
+    % Power balance
+    B(t) = (Isp(t) - Ih(t) - ILoad(t)) * VBat(t);
+
+    BTotal = BTotal + B(t) * StepTime ;
+    PspTotalM = PspTotalM + PspTotal(t) * StepTime ;
+    PmpptM = PmpptM + Pmppt(t)  * StepTime ;
+    PLoadTotal = PLoadTotal +  PLoad(t) * StepTime ;
+    PhM = PhM + Ph(t) * StepTime;
+    P_TPayloadM =  P_TPayloadM + P_TPayload(t) * StepTime;
+    P_TPayload3M =  P_TPayload3M + P_TPayload3(t) * StepTime;
+    P_BeaconM  = P_BeaconM + P_Beacon(t) * StepTime;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%% Controls
+% Perturb & Observe method 
+% Task Scheduler: Knapsack problem
+
+    s = serialport("COM4",9600,'Timeout',120);
+
+    txData = zeros(1, 2);
+    txData(1) = round(PspTotal(t));
+    txData(2) = round(PLoad(t));
+    rxData = zeros(1, J);
+    tic;
+    for i = 1:2
+        write(s, txData(i), "char");
+    end
+    for i = 1:J
+        rxData(i) = (read(s, 1, "char") - '0');
+        X(i) = rxData(i);
+    end
+    Dl_lost(t) = read(s, 1, "uint16");
+    T_HIL(t) = toc;
+    clear s;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for i = 1:J        
+        aa_Activar(t,i) = X(i);
+        aa_Activada(t,i) = a(i);
+        aa_prioridade(t,i) = U(i);
+        aa_deadline(t,i) = d(i);
+        aa_Executo(t,i) = Ex(i);
+    end
+end
+
+% PLoadTotal 
+PLoadTotalmedia =  PLoadTotal / Time_length(1)
+
+PmpptM
+PspTotalM 
+BTotal
+PLoadTotal
+%PLoadTotal = PLoadTotal + P_TPayloadM +P_BeaconM
+PhM 
+P_TPayloadM
+P_TPayload3M
+P_BeaconM
+%PCargaTotal =  PLoadTotal + PhM +  P_TPayloadM + P_BeaconM + P_TPayload3M
+PCargaTotal =  PLoadTotal + PhM
+PCargaTotalM = PCargaTotal/ Time_length(1)
+PspTotalM - PCargaTotal 
+
+%%%%%%%%%% txt %%%%%%%%%%%%
+
+f = fopen('hil\hil_n7_case9.txt', 'w');
+fprintf(f, '%d,', length(TimerS));
+fprintf(f, '\r\n');
+fprintf(f, '%d,', TimerS);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', Pmppt);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', PspTotal);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', Vmppt);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', VBat);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', SoC);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', T_HIL);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', Dl_lost);
+for i = 1:J
+    fprintf(f, '\r\n');
+    fprintf(f, '%d,', aa_Activar(:,i));
+end
+fclose(f);
