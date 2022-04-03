@@ -14,6 +14,9 @@
 
 #include <stdint.h>
 
+#define LINEAR_PRIORITY 1
+#define EXPONENTIAL_PRIORITY 2
+
 /**
  * @brief Dynamic programming solution for the knapsack problem.
  * 

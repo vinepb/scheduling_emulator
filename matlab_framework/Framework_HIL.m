@@ -11,7 +11,7 @@ clear all;
 clc;
 
 %% Input 
-load('Detumbling_Irradiance_test2.mat');
+load('Detumbling_Irradiance_test.mat');
 
 StepTimeVector = IrradianceTotal(:,1);
 Qtot1 = IrradianceTotal(:,2);
@@ -83,7 +83,7 @@ VBat(2) = 4.2;   % voltage battery
 %load('tarefas6'); % igual que a 2 mas sem as tarefas dos payloads
 %load('tarefas7'); % igual que a 2 mas sem as tarefas dos payloads ni Beacon
 %load('tarefas8'); % aumento da frecuencia das tarefas
-load('tarefas7_test9');
+load('tarefas7_test10');
 J = length(unnamed3(:,1));
 n = J;
 % n = 10;
@@ -426,7 +426,7 @@ PspTotalM - PCargaTotal
 
 %%%%%%%%%% txt %%%%%%%%%%%%
 
-f = fopen('hil\hil_n7_case9.txt', 'w');
+f = fopen('hil\hil2_n7_case10.txt', 'w');
 fprintf(f, '%d,', length(TimerS));
 fprintf(f, '\r\n');
 fprintf(f, '%d,', TimerS);

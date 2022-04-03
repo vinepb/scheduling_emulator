@@ -15,6 +15,15 @@
 #include "tasks.h"
 #include "knapsack.h"
 
+#define PRIORITY_TYPE EXPONENTIAL_PRIORITY
+#ifndef PRIORITY_TYPE
+#define PRIORITY_TYPE LINEAR_PRIORITY
+#endif
+
+#if PRIORITY_TYPE == EXPONENTIAL_PRIORITY
+static const uint32_t priority_exp_lut[] = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10, 10, 10, 11, 11, 12, 13, 13, 14, 14, 15, 16, 17, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 32, 33, 35, 36, 38, 40, 42, 44, 46, 48, 50, 52, 55, 58, 60, 63, 66, 69, 72, 76, 79, 83, 87, 91, 95, 100};
+#endif
+
 uint32_t aux_matrix[TASK_COUNT + 1][SUM_OF_WEIGHTS + 1] = {0};
 
 /**
@@ -142,7 +151,11 @@ uint32_t dynamic_priority(uint32_t items)
         else
         {
             // Priority calculation.
+            #if PRIORITY_TYPE == LINEAR_PRIORITY
             values[i] = max(1, (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i])));
+            #elif PRIORITY_TYPE == EXPONENTIAL_PRIORITY
+            values[i] = priority_exp_lut[max(1, (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i]))) - 1];
+            #endif
         }
         // If the task has already been executed.
         if (task_already_executed[i] == true)
