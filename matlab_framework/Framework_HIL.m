@@ -10,6 +10,9 @@ close all;
 clear all;
 clc;
 
+taskName = 'tarefas7_test1';
+fileName = 'hil\hil2_n7_case1.txt';
+
 %% Input 
 load('Detumbling_Irradiance_test.mat');
 
@@ -83,7 +86,7 @@ VBat(2) = 4.2;   % voltage battery
 %load('tarefas6'); % igual que a 2 mas sem as tarefas dos payloads
 %load('tarefas7'); % igual que a 2 mas sem as tarefas dos payloads ni Beacon
 %load('tarefas8'); % aumento da frecuencia das tarefas
-load('tarefas7_test10');
+load(taskName);
 J = length(unnamed3(:,1));
 n = J;
 % n = 10;
@@ -91,7 +94,6 @@ n = J;
 j = unnamed3(1:n,1);  % numero tarefa
 U = unnamed3(1:n,6);  % prioridade da tarefa
 R = unnamed3(1:n,4); % recurso da tarefa
-%Dl = unnamed3(1:n,3)/10; % Deadline e periodo
 Dl = unnamed3(1:n,3); % Deadline e periodo
 C = unnamed3(1:n,2);  % tempo de execuçao
 X = unnamed3(1:n,5);  % tarefa executada ou não
@@ -179,9 +181,8 @@ VBat(1) = battery(SoC(1),Ibat(1),20,StepTime);
 Ibat(2) = Ibat(1);                          % Current Battery,   Ibat = Ih + Iload - Isp
 SoC(2)  = SoC(1);
 VBat(2) = VBat(1);
-W(1) = 0;
-W(2) = 0;
-W(3) = 0;
+W(1) = 1;
+W(2) = 1;
 % Power balance
 B(1) = (Isp(1) - Ih(1) - ILoad(1)) * VBat(1);
 B(2) = B(1);
@@ -222,11 +223,7 @@ for t = 3:Time_length %
         P_Beacon(t) = 0;
         for i = 1:J
             if X(i) == 1
-                if i == 4
-                    Ph(t) = R(4)/1000;  % Heater           
-                else   
-                    PLoad(t) = PLoad(t) + R(i);   % Load        
-                end
+                PLoad(t) = PLoad(t) + R(i);
             end
         end
         
@@ -246,6 +243,11 @@ for t = 3:Time_length %
         P_Beacon(t) = P_Beacon(t)/1000;
         PLoad(t) = PLoad(t)/1000;
         
+        if W(t-1) > PLoad(t)
+            Ph(t) = W(t-1) - PLoad(t);
+        else
+            Ph(t) = 0;
+        end
         
         % P_TPayload3(t) = (W(t-1) - PLoad(t) - Ph(t)) * 1; % case 2
         % P_Beacon(t) = (W(t-1) - PLoad(t) - Ph(t)) * 0.10; % case 2
@@ -383,7 +385,7 @@ for t = 3:Time_length %
 
     txData = zeros(1, 2);
     txData(1) = round(PspTotal(t));
-    txData(2) = round(PLoad(t));
+    txData(2) = round(W(t-1));
     rxData = zeros(1, J);
     tic;
     for i = 1:2
@@ -426,7 +428,7 @@ PspTotalM - PCargaTotal
 
 %%%%%%%%%% txt %%%%%%%%%%%%
 
-f = fopen('hil\hil2_n7_case10.txt', 'w');
+f = fopen(fileName, 'w');
 fprintf(f, '%d,', length(TimerS));
 fprintf(f, '\r\n');
 fprintf(f, '%d,', TimerS);

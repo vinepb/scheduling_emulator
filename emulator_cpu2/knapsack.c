@@ -133,7 +133,7 @@ uint32_t dynamic_priority(uint32_t items)
             deadline_loss_counter++;
         }
         // New deadline calculation.
-        if (tick >= task_deadline[i])
+        if (tick == task_deadline[i])
         {
             task_deadline[i] += task_period[i];
             task_already_executed[i] = 0;
@@ -146,7 +146,7 @@ uint32_t dynamic_priority(uint32_t items)
         // Next deadline loss.
         if ((task_deadline[i] - task_computing_time[i] - tick) <= 0)
         {
-            values[i] = UINT32_MAX;
+            values[i] = UINT16_MAX;
         }
         else
         {
@@ -163,13 +163,6 @@ uint32_t dynamic_priority(uint32_t items)
             values[i] = 1;
         }
     }
-    if (TASK_COUNT >= 4)
-    {
-        if (task_already_executed[4] == true)
-        {
-            values[4] = 0;
-        }
-    }
 
     tick += 1;
 
@@ -177,45 +170,29 @@ uint32_t dynamic_priority(uint32_t items)
 }
 
 
-uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t Pload)
+uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t Win)
 {
     static uint32_t PspTotal = 0UL, PspTotalOld = 0UL;
-    static uint32_t perturb = 0, perturbOld = 0;
-    static const uint32_t step = 1;
-    uint32_t perturbAux;
-    uint32_t W;
+    static uint32_t perturb = 0UL, perturbOld = 0UL;
+    static const uint32_t step = 1UL;
+    uint32_t Wout = 0UL;
 
     PspTotalOld = PspTotal;
     PspTotal = PspTotalNew;
-    perturbAux = perturbOld;
     perturbOld = perturb;
 
-    if ((PspTotalOld > PspTotal) && (perturbOld == 0))
+    if (PspTotalOld > PspTotal)
     {
-        perturb = 1;
+        (perturbOld == 0) ? (perturb = 1) : (perturb = 0);
     }
-    else if ((PspTotalOld > PspTotal) && (perturbOld == 1))
+    else
     {
-        perturb = 0;
-    }
-
-    if ((PspTotalOld < PspTotal) && (perturbOld == 0))
-    {
-        perturb = 0;
-    }
-    else if ((PspTotalOld < PspTotal) && (perturbOld == 1))
-    {
-        perturb = 1;
+        perturb = perturbOld;
     }
 
-    if (PspTotalOld == PspTotal)
-    {
-        perturb = perturbAux;
-    }
+    (perturb) ? (Wout = Win - step) : (Wout = Win + step);
+    if (Wout <= 10UL) {Wout = 10UL;}
 
-    (perturb) ? (W = Pload - step) : (W = Pload + step);
-    if (W <= 1) { W = 1; }
-
-    return W;
+    return Wout;
 }
 

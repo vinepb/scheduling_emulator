@@ -16,11 +16,11 @@
 #include <stdbool.h>
 
 #define TASK_COUNT 7
-#define SUM_OF_WEIGHTS 78
+#define SUM_OF_WEIGHTS 74
 
-const uint32_t      weights[TASK_COUNT] = {13, 12, 8, 14, 14, 7, 10};
-const uint32_t      task_period[TASK_COUNT] = {78, 438, 545, 454, 239, 65, 38};
-const uint32_t      task_computing_time[TASK_COUNT] = {36, 113, 324, 136, 166, 24, 31};
+const uint32_t      weights[TASK_COUNT] = {14, 10, 11, 7, 12, 10, 10};
+const uint32_t      task_period[TASK_COUNT] = {266, 533, 397, 259, 389, 81, 456};
+const uint32_t      task_computing_time[TASK_COUNT] = {165, 119, 339, 16, 41, 19, 12};
 
 volatile uint32_t   values[TASK_COUNT];
 volatile bool       task_on_off_status[TASK_COUNT];
