@@ -10,8 +10,8 @@ close all;
 clear all;
 clc;
 
-taskName = 'tarefas7_test4';
-fileName = 'sim\sim3_n7_case4.txt';
+taskName = 'tarefas10';
+fileName = 'sim\sim4_case10.txt';
 
 %% Input 
 load('Detumbling_Irradiance.mat');
@@ -72,8 +72,8 @@ VBat(1) = 4.2;   % voltage battery
 VBat(2) = 4.2;   % voltage battery
 
 %Initialization do Framework(para fazer)
-load(taskName); % igual que a 2 mas ajustava payloads e beacon
-J = length(unnamed3(:,1));
+load(taskName);
+J = length(unnamed3(:,1)) - 1;
 n = J;
 j = unnamed3(1:n,1);  % numero tarefa
 U = unnamed3(1:n,6);  % prioridade da tarefa
@@ -94,7 +94,6 @@ for i = 1:J
     Ex(i) = 0;
     Contador(i) = 0;
 end
-Max_W = sum(R);
 
 perturb(1) = 1;
 perturb(2) = 1;
@@ -195,11 +194,7 @@ for t = 3:Time_length %
         P_Beacon(t) = 0;
         for i = 1:J
             if X(i) == 1
-%                 if i == 4
-%                     Ph(t) = R(i);
-%                 else
-                    PLoad(t) = PLoad(t) + R(i);
-%                 end
+                PLoad(t) = PLoad(t) + R(i);
             end
         end
 
@@ -217,7 +212,6 @@ for t = 3:Time_length %
         P_TPayload(t) = P_TPayload(t)/1000;
         P_Beacon(t) = P_Beacon(t)/1000;
         PLoad(t) = PLoad(t)/1000;
-%         Ph(t) = Ph(t)/1000;
 
         if W(t-1) > PLoad(t)
             Ph(t) = W(t-1) - PLoad(t);
@@ -400,8 +394,8 @@ for t = 3:Time_length %
         if (d(i) - C(i) - t) <= 0
             U(i) = M;    % perdida proxima de Deadline
         else
-            U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
-            % U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+%             U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
+            U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
         end
         
         if Ex(i) == 1  % si ya fue ejecutad a tarefa prioridade baixa
@@ -433,9 +427,7 @@ for t = 3:Time_length %
     end
 
     W(t) =  round(W(t) * 1000);
-%     if W > Max_W
-%         W = Max_W;
-%     end
+
  % Knapsack problem
     [best, X] = knapsack(R, U, W(t));
      
@@ -480,6 +472,6 @@ fprintf(f, '\r\n');
 fprintf(f, '%d,', Ph);
 fprintf(f, '\r\n');
 fprintf(f, '%d,', W);
+fprintf(f, '\r\n');
+fprintf(f, '%d,', TBat);
 fclose(f);
-
- 
