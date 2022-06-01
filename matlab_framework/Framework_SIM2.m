@@ -89,7 +89,7 @@ Dl_lost = 0;
 
 for i = 1:J
     d(i) =  Dl(i) + 3;
-    R(i) = round(R(i) * 100);
+    R(i) = round(R(i));
     perdeu(i) = 0;
     Ex(i) = 0;
     Contador(i) = 0;

@@ -82,7 +82,7 @@ Dl_lost = 0;
 
 for i = 1:J
     d(i) =  Dl(i) + 3;
-    R(i) = round(R(i) * 1000);
+    R(i) = round(R(i));
     Cont(i) = 0;
     perdeu(i) = 0;
     Ex(i) = 0;
