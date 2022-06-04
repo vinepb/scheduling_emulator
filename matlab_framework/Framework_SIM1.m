@@ -11,12 +11,13 @@ clear all;
 clc;
 
 taskName = 'tarefas10';
-fileName = 'sim\sim6_case10.txt';
+fileName = 'sim\sim3_case10.txt';
 
 %% Input 
 load('Detumbling_Irradiance.mat');
 
 expLut = [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10, 10, 10, 11, 11, 12, 13, 13, 14, 14, 15, 16, 17, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 32, 33, 35, 36, 38, 40, 42, 44, 46, 48, 50, 52, 55, 58, 60, 63, 66, 69, 72, 76, 79, 83, 87, 91, 95, 100];
+invLut = [1, 6, 10, 14, 18, 22, 25, 29, 32, 35, 38, 41, 43, 46, 49, 51, 53, 55, 57, 59, 61, 63, 65, 66, 68, 69, 71, 72, 73, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 84, 85, 86, 87, 87, 88, 88, 89, 90, 90, 91, 91, 91, 92, 92, 93, 93, 93, 94, 94, 94, 95, 95, 95, 96, 96, 96, 96, 96, 97, 97, 97, 97, 97, 98, 98, 98, 98, 98, 98, 98, 98, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100];
 
 %% Time lenght
 StepTimeVector = IrradianceTotal(:,1);
@@ -395,7 +396,8 @@ for t = 3:Time_length %
             U(i) = M;    % perdida proxima de Deadline
         else
 %             U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
-            U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+%             U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+            U(i) = invLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
         end
         
         if Ex(i) == 1  % si ya fue ejecutad a tarefa prioridade baixa
@@ -430,12 +432,13 @@ for t = 3:Time_length %
         W(t) = 0.5;
     end
 
-    W(t) =  round(W(t) * 1000);
-    if W(t) > Max_W
-        W(t) = Max_W;
+    W_knapsack =  round(W(t) * 1000);
+    if W_knapsack > Max_W
+        W_knapsack = Max_W;
     end
+
  % Knapsack problem
-    [best, X] = knapsack(R, U, W(t));
+    [best, X] = knapsack(R, U, W_knapsack);
      
     W(t) = W(t)/1000;
 

@@ -10,7 +10,7 @@ close all;
 clear all;
 clc;
 
-taskName = 'tarefas12';
+taskName = 'tarefas11';
 fileName = 'sim\sim4_case11.txt';
 
 %% Input 
@@ -188,7 +188,11 @@ while (abs(Vbat_actual - Vbat_old)> 1e-3)
     P_Beacon(t) = 0;
     for i = 1:J
        if X(i) == 1
-           PLoad(t) = PLoad(t) + R(i);   % Load
+        if i == 22
+            Ph(t) = R(i);
+        else
+           PLoad(t) = PLoad(t) + R(i);
+        end
        end
     end
     
@@ -207,11 +211,10 @@ while (abs(Vbat_actual - Vbat_old)> 1e-3)
     P_TPayload(t) = P_TPayload(t)/1000;
     P_Beacon(t) = P_Beacon(t)/1000;
     PLoad(t) = PLoad(t)/1000;
+    Ph(t) = Ph(t)/1000;
     
-    if W(t-1) > PLoad(t)
+    if W(t-1) > PLoad(t) + Ph(t)
         Ph(t) = W(t-1) - PLoad(t);
-    else
-        Ph(t) = 0;
     end
 
     ILoad(t) = (PLoad(t) + P_TPayload3(t)) / Vbat_actual;%3.3;
@@ -393,12 +396,16 @@ for i = 1:J
     if (d(i) - C(i) - t) <= 0
         U(i) = M;    % perdida proxima de Deadline
     else
-%         U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
-        U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+        U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
+%         U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
     end
     
         if Ex(i) == 1  % si ya fue ejecutad a tarefa prioridade baixa
-            U(i) = 1;
+            if i == 22
+                U(i) = 0;
+            else
+                U(i) = 1;
+            end
         end
     end
 
@@ -424,13 +431,10 @@ end
        W(t) = 0.5;
   end
  
-  W(t) =  round(W(t) * 1000);
+  W_knapsack =  round(W(t) * 1000);
 
  % Knapsack problem
-     [best, X] = knapsack(R,U, W(t));
-     
-     W(t)=   W(t)/1000;
-     
+     [best, X] = knapsack(R,U, W_knapsack);
      
     for i = 1:J        
         aa_Activar(t,i) = X(i);
