@@ -11,12 +11,13 @@ clear all;
 clc;
 
 taskName = 'tarefas11';
-fileName = 'sim\sim4_case11.txt';
+fileName = 'sim\sim2_case11.txt';
 
 %% Input 
 load('Detumbling_Irradiance.mat');
 
 expLut = [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10, 10, 10, 11, 11, 12, 13, 13, 14, 14, 15, 16, 17, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 32, 33, 35, 36, 38, 40, 42, 44, 46, 48, 50, 52, 55, 58, 60, 63, 66, 69, 72, 76, 79, 83, 87, 91, 95, 100];
+invLut = [1, 6, 10, 14, 18, 22, 25, 29, 32, 35, 38, 41, 43, 46, 49, 51, 53, 55, 57, 59, 61, 63, 65, 66, 68, 69, 71, 72, 73, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 84, 85, 86, 87, 87, 88, 88, 89, 90, 90, 91, 91, 91, 92, 92, 93, 93, 93, 94, 94, 94, 95, 95, 95, 96, 96, 96, 96, 96, 97, 97, 97, 97, 97, 98, 98, 98, 98, 98, 98, 98, 98, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100];
 
 StepTimeVector = IrradianceTotal(:,1);
 Time_length = size(StepTimeVector);
@@ -188,11 +189,11 @@ while (abs(Vbat_actual - Vbat_old)> 1e-3)
     P_Beacon(t) = 0;
     for i = 1:J
        if X(i) == 1
-        if i == 22
-            Ph(t) = R(i);
-        else
-           PLoad(t) = PLoad(t) + R(i);
-        end
+           if i == 22
+             Ph(t) = R(i);  % Heater           
+           else   
+             PLoad(t) = PLoad(t) + R(i);   % Load        
+           end
        end
     end
     
@@ -204,18 +205,14 @@ while (abs(Vbat_actual - Vbat_old)> 1e-3)
         P_TPayload(t) =  P_TPayload(t) + R(2);
     end
 %        
-    if X(30)  == 1  
-        P_Beacon(t) =  R(30);
+    if X(31)  == 1  
+        P_Beacon(t) =  R(31);
     end
     
     P_TPayload(t) = P_TPayload(t)/1000;
     P_Beacon(t) = P_Beacon(t)/1000;
     PLoad(t) = PLoad(t)/1000;
     Ph(t) = Ph(t)/1000;
-    
-    if W(t-1) > PLoad(t) + Ph(t)
-        Ph(t) = W(t-1) - PLoad(t);
-    end
 
     ILoad(t) = (PLoad(t) + P_TPayload3(t)) / Vbat_actual;%3.3;
    Ih(t) = Ph(t)/Vbat_actual;
@@ -396,8 +393,9 @@ for i = 1:J
     if (d(i) - C(i) - t) <= 0
         U(i) = M;    % perdida proxima de Deadline
     else
-        U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
-%         U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+            % U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
+            U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+            % U(i) = invLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
     end
     
         if Ex(i) == 1  % si ya fue ejecutad a tarefa prioridade baixa
@@ -428,13 +426,13 @@ end
  end
  
   if Isp(t) < 0.001
-       W(t) = 0.5;
+       W(t) = 1;
   end
  
   W_knapsack =  round(W(t) * 1000);
 
  % Knapsack problem
-     [best, X] = knapsack(R,U, W_knapsack);
+     [best, X] = knapsack(R,U, W_knapsack);    
      
     for i = 1:J        
         aa_Activar(t,i) = X(i);

@@ -385,7 +385,7 @@ for t = 3:Time_length %
 
     txData = zeros(1, 2);
     txData(1) = round(PspTotal(t));
-    txData(2) = round(W(t-1));
+    txData(2) = round(W(t-1)); % TODO: consertar TX e RX do HIL
     rxData = zeros(1, J);
     tic;
     for i = 1:2

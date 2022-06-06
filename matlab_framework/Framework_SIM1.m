@@ -10,8 +10,8 @@ close all;
 clear all;
 clc;
 
-taskName = 'tarefas10';
-fileName = 'sim\sim3_case10.txt';
+taskName = 'tarefas1';
+fileName = 'sim\sim1_case1.txt';
 
 %% Input 
 load('Detumbling_Irradiance.mat');
@@ -395,9 +395,9 @@ for t = 3:Time_length %
         if (d(i) - C(i) - t) <= 0
             U(i) = M;    % perdida proxima de Deadline
         else
-%             U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
-%             U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
-            U(i) = invLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+            U(i) = round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1));
+            % U(i) = expLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
+            % U(i) = invLut(round(max( (100 - ( 100 * (d(i) - t) / Dl(i) ) ), 1)));
         end
         
         if Ex(i) == 1  % si ya fue ejecutad a tarefa prioridade baixa
@@ -415,7 +415,7 @@ for t = 3:Time_length %
 % % %% Knapsack problem solver
 % % 
 
-    Step(t) = 0.01;
+    Step(t) = 0.1;
 
     if (perturb(t) == 1) 
         W(t) = (W(t-1) - Step(t));
@@ -429,18 +429,13 @@ for t = 3:Time_length %
     end
     
     if Isp(t) < 0.001
-        W(t) = 0.5;
+        W(t) = 1;
     end
 
     W_knapsack =  round(W(t) * 1000);
-    if W_knapsack > Max_W
-        W_knapsack = Max_W;
-    end
 
  % Knapsack problem
     [best, X] = knapsack(R, U, W_knapsack);
-     
-    W(t) = W(t)/1000;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
