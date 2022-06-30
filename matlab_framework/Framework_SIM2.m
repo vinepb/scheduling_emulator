@@ -11,7 +11,7 @@ clear all;
 clc;
 
 taskName = 'tarefas10';
-fileName = 'sim\sim2_case10.txt';
+fileName = 'sim/sim2_case10.txt';
 
 %% Input 
 load('Detumbling_Irradiance.mat');

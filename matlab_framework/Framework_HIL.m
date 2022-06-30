@@ -11,7 +11,7 @@ clear all;
 clc;
 
 taskName = 'tarefas7_test1';
-fileName = 'hil\hil2_n7_case1.txt';
+fileName = 'hil/hil2_n7_case1.txt';
 
 %% Input 
 load('Detumbling_Irradiance_test.mat');
