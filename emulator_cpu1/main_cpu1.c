@@ -4,41 +4,41 @@
  * @brief This file contains the main function for CPU1.
  * @version 0.1
  * @date 2022-01-28
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 //############################################################################
 // $Copyright:
 // Copyright (C) 2020 Texas Instruments Incorporated - http://www.ti.com/
 //
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
 // are met:
-// 
-//   Redistributions of source code must retain the above copyright 
+//
+//   Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
-// 
+//
 //   Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the 
-//   documentation and/or other materials provided with the   
+//   notice, this list of conditions and the following disclaimer in the
+//   documentation and/or other materials provided with the
 //   distribution.
-// 
+//
 //   Neither the name of Texas Instruments Incorporated nor the names of
 //   its contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
 // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // $
 //############################################################################
@@ -84,7 +84,7 @@ __interrupt void cpuTimer0ISR(void);
 
 /**
  * @brief Initialize timer 0
- * 
+ *
  * @param[in] freq System clock frequency
  * @param[in] period Timer period
  */
@@ -136,7 +136,7 @@ void main(void)
 
 #if USE_TIMER
     int i;
-    for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
+    for (i = 0; i < (sizeof(GPIO_pins) / sizeof(uint32_t)); i++)
     {
         GPIO_setPadConfig(GPIO_pins[i], GPIO_PIN_TYPE_STD);
         GPIO_setDirectionMode(GPIO_pins[i], GPIO_DIR_MODE_OUT);
@@ -190,29 +190,29 @@ void main(void)
     uint32_t IPCresponse = 0UL;
     uint16_t deadline_loss_counter = 0U;
 
-    while(1)
+    while (1)
     {
 #if !USE_TIMER
 #if !RECV_W
         // Read a character from the FIFO.
-        PspTotal = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+        PspTotal = (uint32_t)SCI_readCharBlockingFIFO(SCIA_BASE);
 
         rxStatus = SCI_getRxStatus(SCIA_BASE);
-        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        if ((rxStatus & SCI_RXSTATUS_ERROR) != 0)
         {
-            //If Execution stops here there is some error
-            //Analyze SCI_getRxStatus() API return value
+            // If Execution stops here there is some error
+            // Analyze SCI_getRxStatus() API return value
             ESTOP0;
         }
 
         // Read another character from the FIFO.
-        Pload = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+        Pload = (uint32_t)SCI_readCharBlockingFIFO(SCIA_BASE);
 
         rxStatus = SCI_getRxStatus(SCIA_BASE);
-        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        if ((rxStatus & SCI_RXSTATUS_ERROR) != 0)
         {
-            //If Execution stops here there is some error
-            //Analyze SCI_getRxStatus() API return value
+            // If Execution stops here there is some error
+            // Analyze SCI_getRxStatus() API return value
             ESTOP0;
         }
 
@@ -223,16 +223,16 @@ void main(void)
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        PspTotal, 0, Pload);
+                        PspTotal, 0, Pload);
 #else
         // Read a character from the FIFO.
-        W = (uint32_t) SCI_readCharBlockingFIFO(SCIA_BASE);
+        W = (uint32_t)SCI_readCharBlockingFIFO(SCIA_BASE);
 
         rxStatus = SCI_getRxStatus(SCIA_BASE);
-        if((rxStatus & SCI_RXSTATUS_ERROR) != 0)
+        if ((rxStatus & SCI_RXSTATUS_ERROR) != 0)
         {
-            //If Execution stops here there is some error
-            //Analyze SCI_getRxStatus() API return value
+            // If Execution stops here there is some error
+            // Analyze SCI_getRxStatus() API return value
             ESTOP0;
         }
 
@@ -240,7 +240,7 @@ void main(void)
 
         // Send a message without message queue
         IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-        0, 0, W);
+                        0, 0, W);
 #endif
         // Wait for acknowledgment
         IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
@@ -249,7 +249,7 @@ void main(void)
         IPCresponse = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
         // Get deadline_loss_counter from first half of response
-        deadline_loss_counter = (uint16_t) (IPCresponse >> 16);
+        deadline_loss_counter = (uint16_t)(IPCresponse >> 16);
 
         printf("CPU1: Received data: 0b");
         for (j = TASK_COUNT - 1; j >= 0; j--)
@@ -286,14 +286,15 @@ __interrupt void cpuTimer0ISR(void)
     ADC_forceMultipleSOC(ADCA_BASE, ADC_FORCE_SOC0);
 
     // Wait for ADCA to complete, then acknowledge flag
-    while(ADC_getInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1) == false);
+    while (ADC_getInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1) == false)
+        ;
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
-    
+
     // Store results
     ADCA_Result = ADC_readResult(ADCARESULT_BASE, ADC_SOC_NUMBER0);
 
     data = (((uint32_t)ADCA_Result) * 100) / 4095;
-#else /* Use random number generator instead */
+#else  /* Use random number generator instead */
     data = rand_generator();
 #endif /* USE_ADC */
 
@@ -301,7 +302,7 @@ __interrupt void cpuTimer0ISR(void)
 
     // Send a message without message queue
     IPC_sendCommand(IPC_CPU1_L_CPU2_R, IPC_FLAG0, IPC_ADDR_CORRECTION_ENABLE,
-    0, 0, data);
+                    0, 0, data);
 
     // Wait for acknowledgment
     IPC_waitForAck(IPC_CPU1_L_CPU2_R, IPC_FLAG0);
@@ -309,7 +310,7 @@ __interrupt void cpuTimer0ISR(void)
     // Read response
     data = IPC_getResponse(IPC_CPU1_L_CPU2_R);
 
-    for (i = 0; i < (sizeof(GPIO_pins)/sizeof(uint32_t)); i++)
+    for (i = 0; i < (sizeof(GPIO_pins) / sizeof(uint32_t)); i++)
     {
         if ((data >> i) & 1UL)
         {
@@ -378,7 +379,7 @@ void initADCA(void)
 }
 
 void initADCASOC(void)
-{   
+{
     // Configure SOC0 to convert pin A0 by software only
     ADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
                  ADC_CH_ADCIN0, 15);
@@ -398,9 +399,7 @@ void initSCIA()
     SCI_performSoftwareReset(SCIA_BASE);
 
     // 8 char bits, 1 stop bit, no parity.
-    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, SCIA_BAURATE, (SCI_CONFIG_WLEN_8 |
-                                                                SCI_CONFIG_STOP_ONE |
-                                                                SCI_CONFIG_PAR_NONE));
+    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, SCIA_BAURATE, (SCI_CONFIG_WLEN_8 | SCI_CONFIG_STOP_ONE | SCI_CONFIG_PAR_NONE));
     SCI_resetChannels(SCIA_BASE);
     SCI_resetRxFIFO(SCIA_BASE);
     SCI_resetTxFIFO(SCIA_BASE);

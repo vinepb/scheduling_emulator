@@ -4,9 +4,9 @@
  * @brief Dynamic programming solution for the knapsack problem.
  * @version 0.1
  * @date 2022-01-28
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #include <stdint.h>
@@ -28,15 +28,21 @@ uint32_t aux_matrix[TASK_COUNT + 1][SUM_OF_WEIGHTS + 1] = {0};
 
 /**
  * @brief Calculates the maximum between two numbers.
- * 
+ *
  * @param[in] a First number.
  * @param[in] b Second number.
  * @return @c uint32_t The greater number.
  */
 static uint32_t max(uint32_t a, uint32_t b)
 {
-    if (a > b) { return a;}
-    else { return b;}
+    if (a > b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
 }
 
 uint32_t dynamic_knapsack(uint32_t max_weight)
@@ -52,7 +58,7 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     }
 
     // Initialize all values of the matrix to 0.
-    for (i = 0; i < (TASK_COUNT + 1); i ++)
+    for (i = 0; i < (TASK_COUNT + 1); i++)
     {
         for (j = 0; j < (max_weight + 1); j++)
         {
@@ -73,7 +79,8 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
             {
                 aux_matrix[i][j] = max(values[i - 1] + aux_matrix[i - 1][j - weights[i - 1]], aux_matrix[i - 1][j]);
             }
-            else{
+            else
+            {
                 aux_matrix[i][j] = aux_matrix[i - 1][j];
             }
         }
@@ -150,12 +157,12 @@ uint32_t dynamic_priority(uint32_t items)
         }
         else
         {
-            // Priority calculation.
-            #if PRIORITY_TYPE == LINEAR_PRIORITY
+// Priority calculation.
+#if PRIORITY_TYPE == LINEAR_PRIORITY
             values[i] = max(1, (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i])));
-            #elif PRIORITY_TYPE == EXPONENTIAL_PRIORITY
+#elif PRIORITY_TYPE == EXPONENTIAL_PRIORITY
             values[i] = priority_exp_lut[max(1, (100UL - ((100UL * (task_deadline[i] - tick)) / task_period[i]))) - 1];
-            #endif
+#endif
         }
         // If the task has already been executed.
         if (task_already_executed[i] == true)
@@ -168,7 +175,6 @@ uint32_t dynamic_priority(uint32_t items)
 
     return deadline_loss_counter;
 }
-
 
 uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t Win)
 {
@@ -191,8 +197,10 @@ uint32_t perturb_observe(uint32_t PspTotalNew, uint32_t Win)
     }
 
     (perturb) ? (Wout = Win - step) : (Wout = Win + step);
-    if (Wout <= 10UL) {Wout = 10UL;}
+    if (Wout <= 10UL)
+    {
+        Wout = 10UL;
+    }
 
     return Wout;
 }
-

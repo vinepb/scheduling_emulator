@@ -4,9 +4,9 @@
  * @brief Random number generator.
  * @version 0.1
  * @date 2022-01-28
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #ifndef RAND_GENERATOR_H_
@@ -16,7 +16,7 @@
 
 /**
  * @brief Generate a random number.
- * 
+ *
  * @return @c uint32_t A random number.
  */
 uint32_t rand_generator();
