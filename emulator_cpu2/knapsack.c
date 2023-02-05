@@ -49,7 +49,7 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
 {
     uint32_t best = 0;
     uint32_t items = 0, k = 0;
-    int i, j;
+    int j, i;
 
     // Cap max_weight to avoid overflow
     if (max_weight > SUM_OF_WEIGHTS)
@@ -58,30 +58,30 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     }
 
     // Initialize all values of the matrix to 0.
-    for (i = 0; i < (TASK_COUNT + 1); i++)
+    for (j = 0; j < (TASK_COUNT + 1); j++)
     {
-        for (j = 0; j < (max_weight + 1); j++)
+        for (i = 0; i < (max_weight + 1); i++)
         {
-            aux_matrix[i][j] = 0;
+            aux_matrix[j][i] = 0;
         }
     }
 
     // Fill the matrix with the values of the knapsack problem.
-    for (i = 0; i < (TASK_COUNT + 1); i++)
+    for (j = 0; j < (TASK_COUNT + 1); j++)
     {
-        for (j = 0; j < (max_weight + 1); j++)
+        for (i = 0; i < (max_weight + 1); i++)
         {
-            if (i == 0 || j == 0)
+            if (j == 0 || i == 0)
             {
-                aux_matrix[i][j] = 0;
+                aux_matrix[j][i] = 0;
             }
-            else if (weights[i - 1] <= j)
+            else if (weights[j - 1] <= i)
             {
-                aux_matrix[i][j] = max(values[i - 1] + aux_matrix[i - 1][j - weights[i - 1]], aux_matrix[i - 1][j]);
+                aux_matrix[j][i] = max(values[j - 1] + aux_matrix[j - 1][i - weights[j - 1]], aux_matrix[j - 1][i]);
             }
             else
             {
-                aux_matrix[i][j] = aux_matrix[i - 1][j];
+                aux_matrix[j][i] = aux_matrix[j - 1][i];
             }
         }
     }
@@ -91,13 +91,13 @@ uint32_t dynamic_knapsack(uint32_t max_weight)
     items = 0;
 
     // Find the items that will be in the knapsack.
-    for (i = TASK_COUNT; i > 0; i--)
+    for (j = TASK_COUNT; j > 0; j--)
     {
-        if (aux_matrix[i - 1][k] != best)
+        if (aux_matrix[j - 1][k] != best)
         {
-            items |= (1 << (i - 1));
-            k = (k - weights[i - 1]);
-            best = aux_matrix[i][k];
+            items |= (1 << (j - 1));
+            k = (k - weights[j - 1]);
+            best = aux_matrix[j][k];
         }
     }
 
