@@ -1,5 +1,6 @@
 # Dynamic knapsack emulator
 
+Code used during the development of thesis to obtain a master degree in electrical engineering while at [Federal University of Santa Catarina](https://ufsc.br).
 Real time task scheduling emulator utilizing dynamic programming.
 
 ## Prerequisites
