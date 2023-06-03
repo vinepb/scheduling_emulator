@@ -1,7 +1,7 @@
 # Dynamic knapsack emulator
 
-Code used during the development of thesis to obtain a master degree in electrical engineering while at [Federal University of Santa Catarina](https://ufsc.br).
-Real time task scheduling emulator utilizing dynamic programming.
+Code used during the development of thesis named "Hardware-in-the-loop simulation of an on-board energy-driven scheduling algorithm for CubeSats" to obtain a master degree in electrical engineering while at [Federal University of Santa Catarina](https://ufsc.br).
+Publications: [IEEE Embedded Systems Letters](https://ieeexplore.ieee.org/document/10105469).
 
 ## Prerequisites
 
